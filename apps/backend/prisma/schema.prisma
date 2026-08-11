@@ -1,0 +1,12 @@
+// Schema inicial (esqueleto). Os modelos de domínio (User, Event, Seat, Reservation,
+// Order, Ticket) entram na Spec de Back-end.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
