@@ -26,3 +26,6 @@ npm-debug.log*
 # os / editor
 .DS_Store
 Thumbs.db
+
+# kiro (specs/steering locais — não versionar)
+.kiro/
