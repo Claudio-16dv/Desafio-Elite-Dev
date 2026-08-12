@@ -35,7 +35,8 @@ services:
       TMDB_BASE_URL: https://api.themoviedb.org/3
       CORS_ORIGIN: http://localhost:3000
     command: >
-      sh -c "npx prisma migrate deploy --schema=apps/backend/prisma/schema.prisma;
+      sh -c "npx prisma migrate deploy --schema=apps/backend/prisma/schema.prisma &&
+             npm run seed -w @app/backend &&
              node apps/backend/dist/main.js"
     ports:
       - '3333:3333'

@@ -11,6 +11,7 @@ export const envSchema = z.object({
   TMDB_API_KEY: z.string().optional(),
   TMDB_BASE_URL: z.string().url().default('https://api.themoviedb.org/3'),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
+  RESERVATION_TTL_MINUTES: z.coerce.number().default(10),
 });
 
 export type Env = z.infer<typeof envSchema>;
