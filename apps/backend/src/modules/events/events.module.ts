@@ -7,7 +7,9 @@ import { CancelEventUseCase } from './use-cases/cancel-event.use-case';
 import { CreateEventUseCase } from './use-cases/create-event.use-case';
 import { GetEventSeatsUseCase } from './use-cases/get-event-seats.use-case';
 import { GetEventUseCase } from './use-cases/get-event.use-case';
+import { GetMyEventUseCase } from './use-cases/get-my-event.use-case';
 import { ListEventsUseCase } from './use-cases/list-events.use-case';
+import { ListMyEventsUseCase } from './use-cases/list-my-events.use-case';
 import { PublishEventUseCase } from './use-cases/publish-event.use-case';
 import { UpdateEventUseCase } from './use-cases/update-event.use-case';
 
@@ -20,7 +22,9 @@ import { UpdateEventUseCase } from './use-cases/update-event.use-case';
     PublishEventUseCase,
     CancelEventUseCase,
     GetEventUseCase,
+    GetMyEventUseCase,
     ListEventsUseCase,
+    ListMyEventsUseCase,
     GetEventSeatsUseCase,
     { provide: EventsRepository, useClass: PrismaEventsRepository },
   ],

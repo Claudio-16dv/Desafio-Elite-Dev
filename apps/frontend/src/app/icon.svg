@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="CN">
+  <circle cx="32" cy="32" r="32" fill="#0a0a0f"/>
+  <text x="32" y="34" text-anchor="middle" dominant-baseline="central"
+        font-family="Sora, Arial, sans-serif" font-weight="700" font-size="30">
+    <tspan fill="#ffffff">C</tspan><tspan fill="#8b5cf6">N</tspan>
+  </text>
+</svg>

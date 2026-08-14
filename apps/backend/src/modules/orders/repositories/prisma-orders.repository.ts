@@ -1,38 +1,67 @@
 import { Injectable } from '@nestjs/common';
-import { OrderStatus as PrismaOrderStatus, Prisma, ReservationStatus as PrismaReservationStatus } from '@prisma/client';
+import {
+  OrderStatus as PrismaOrderStatus,
+  Prisma,
+  ReservationStatus as PrismaReservationStatus,
+} from '@prisma/client';
 import { OrderStatus, TicketStatus } from '@app/shared';
 import { PrismaService } from '../../../database/prisma/prisma.service';
 import { ReservationExpiredError } from '../../reservations/errors/reservation-expired.error';
 import { ReservationNotHeldError } from '../../reservations/errors/reservation-not-held.error';
 import { ReservationNotFoundError } from '../../reservations/errors/reservation-not-found.error';
+import { OrderNotFoundError } from '../errors/order-not-found.error';
 import {
   CreatePaidOrderInput,
   CreateRefusedOrderInput,
   OrderRecord,
   OrdersRepository,
 } from './orders.repository';
-import { OrderNotFoundError } from '../errors/order-not-found.error';
+
+const orderDetailsInclude = {
+  event: {
+    select: {
+      id: true,
+      title: true,
+      startsAt: true,
+      venue: true,
+    },
+  },
+  reservation: {
+    select: {
+      seats: {
+        include: {
+          seat: {
+            select: {
+              label: true,
+            },
+          },
+        },
+        orderBy: {
+          seat: {
+            label: 'asc' as const,
+          },
+        },
+      },
+    },
+  },
+  tickets: {
+    include: {
+      seat: {
+        select: {
+          label: true,
+        },
+      },
+    },
+    orderBy: {
+      seat: {
+        label: 'asc' as const,
+      },
+    },
+  },
+} satisfies Prisma.OrderInclude;
 
 type OrderWithDetails = Prisma.OrderGetPayload<{
-  include: {
-    event: {
-      select: {
-        id: true;
-        title: true;
-        startsAt: true;
-        venue: true;
-      };
-    };
-    tickets: {
-      include: {
-        seat: {
-          select: {
-            label: true;
-          };
-        };
-      };
-    };
-  };
+  include: typeof orderDetailsInclude;
 }>;
 
 @Injectable()
@@ -134,6 +163,15 @@ export class PrismaOrdersRepository extends OrdersRepository {
     return order ? this.toRecord(order) : null;
   }
 
+  async findByUserId(userId: string): Promise<OrderRecord[]> {
+    const orders = await this.prisma.order.findMany({
+      where: { userId },
+      include: orderDetailsInclude,
+      orderBy: { createdAt: 'desc' },
+    });
+    return orders.map((order) => this.toRecord(order));
+  }
+
   async cancel(id: string): Promise<OrderRecord> {
     return this.prisma.$transaction(async (tx) => {
       const order = await this.findDetails(tx, id);
@@ -163,7 +201,11 @@ export class PrismaOrdersRepository extends OrdersRepository {
   private assertReservationCanBeCheckedOut(
     reservation: { id: string; status: PrismaReservationStatus; expiresAt: Date } | null,
     now: Date,
-  ): asserts reservation is { id: string; status: PrismaReservationStatus; expiresAt: Date } {
+  ): asserts reservation is {
+    id: string;
+    status: PrismaReservationStatus;
+    expiresAt: Date;
+  } {
     if (!reservation) {
       throw new ReservationNotFoundError();
     }
@@ -181,20 +223,7 @@ export class PrismaOrdersRepository extends OrdersRepository {
   ): Promise<OrderWithDetails | null> {
     return client.order.findUnique({
       where: { id },
-      include: {
-        event: {
-          select: {
-            id: true,
-            title: true,
-            startsAt: true,
-            venue: true,
-          },
-        },
-        tickets: {
-          include: { seat: { select: { label: true } } },
-          orderBy: { seat: { label: 'asc' } },
-        },
-      },
+      include: orderDetailsInclude,
     });
   }
 
@@ -202,10 +231,13 @@ export class PrismaOrdersRepository extends OrdersRepository {
     return {
       id: order.id,
       eventId: order.eventId,
+      eventTitle: order.event.title,
       userId: order.userId,
       reservationId: order.reservationId,
       status: order.status as OrderStatus,
       totalCents: order.totalCents,
+      createdAt: order.createdAt,
+      seatLabels: order.reservation.seats.map(({ seat }) => seat.label),
       tickets: order.tickets.map((ticket) => ({
         id: ticket.id,
         eventId: ticket.eventId,

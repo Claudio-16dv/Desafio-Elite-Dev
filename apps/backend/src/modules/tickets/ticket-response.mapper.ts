@@ -16,6 +16,9 @@ export function toTicketResponse(ticket: TicketRecord, qrSigner: QrSigner): Tick
   };
 }
 
-export function toSharedTicketResponse(ticket: TicketRecord, qrSigner: QrSigner): SharedTicketResponse {
+export function toSharedTicketResponse(
+  ticket: TicketRecord,
+  qrSigner: QrSigner,
+): SharedTicketResponse {
   return toTicketResponse(ticket, qrSigner);
 }

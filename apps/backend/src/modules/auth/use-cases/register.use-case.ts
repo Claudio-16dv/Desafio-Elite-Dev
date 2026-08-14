@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AuthUser, LoginResponse, RegisterRequest, Role } from '@app/shared';
+import { AuthUser, LoginResponse, RegisterRequest } from '@app/shared';
 import { EmailAlreadyUsedError } from '../errors/email-already-used.error';
 import { PasswordHasher } from '../providers/password-hasher';
 import { TokenProvider } from '../providers/token-provider';
@@ -24,7 +24,7 @@ export class RegisterUseCase {
       name: input.name,
       email: input.email,
       passwordHash,
-      role: Role.CLIENT,
+      role: input.role,
     });
 
     return {

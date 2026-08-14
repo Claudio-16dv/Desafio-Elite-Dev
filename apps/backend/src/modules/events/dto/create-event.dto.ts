@@ -1,5 +1,14 @@
 import { Type } from 'class-transformer';
-import { IsDateString, IsInt, IsOptional, IsString, IsUrl, Max, Min, MinLength } from 'class-validator';
+import {
+  IsDateString,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUrl,
+  Max,
+  Min,
+  MinLength,
+} from 'class-validator';
 import { CreateEventRequest } from '@app/shared';
 
 export class CreateEventDto implements CreateEventRequest {

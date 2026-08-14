@@ -34,14 +34,20 @@ export class TicketsController {
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.CLIENT)
-  getById(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser): Promise<TicketResponse> {
+  getById(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<TicketResponse> {
     return this.getTicket.execute(id, user.id);
   }
 
   @Post(':id/share')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.CLIENT)
-  share(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser): Promise<ShareLinkResponse> {
+  share(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ShareLinkResponse> {
     return this.createShareLink.execute(id, user.id);
   }
 }

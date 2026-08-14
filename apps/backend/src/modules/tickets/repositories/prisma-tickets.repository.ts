@@ -38,7 +38,10 @@ export class PrismaTicketsRepository extends TicketsRepository {
   }
 
   async findById(id: string): Promise<TicketRecord | null> {
-    const ticket = await this.prisma.ticket.findUnique({ where: { id }, include: this.detailsInclude });
+    const ticket = await this.prisma.ticket.findUnique({
+      where: { id },
+      include: this.detailsInclude,
+    });
     return ticket ? this.toRecord(ticket) : null;
   }
 
@@ -51,7 +54,10 @@ export class PrismaTicketsRepository extends TicketsRepository {
   }
 
   async findByCode(code: string): Promise<TicketRecord | null> {
-    const ticket = await this.prisma.ticket.findUnique({ where: { code }, include: this.detailsInclude });
+    const ticket = await this.prisma.ticket.findUnique({
+      where: { code },
+      include: this.detailsInclude,
+    });
     return ticket ? this.toRecord(ticket) : null;
   }
 

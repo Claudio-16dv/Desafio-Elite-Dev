@@ -14,10 +14,13 @@ export interface OrderTicketRecord {
 export interface OrderRecord {
   id: string;
   eventId: string;
+  eventTitle: string;
   userId: string;
   reservationId: string;
   status: OrderStatus;
   totalCents: number;
+  createdAt: Date;
+  seatLabels: string[];
   tickets: OrderTicketRecord[];
 }
 
@@ -47,5 +50,6 @@ export abstract class OrdersRepository {
   abstract createPaidOrderWithTickets(input: CreatePaidOrderInput): Promise<OrderRecord>;
   abstract createRefusedOrderAndRelease(input: CreateRefusedOrderInput): Promise<OrderRecord>;
   abstract findById(id: string): Promise<OrderRecord | null>;
+  abstract findByUserId(userId: string): Promise<OrderRecord[]>;
   abstract cancel(id: string): Promise<OrderRecord>;
 }

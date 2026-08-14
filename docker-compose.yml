@@ -32,6 +32,7 @@ services:
       JWT_SECRET: dev-jwt-secret-change-me
       JWT_EXPIRES_IN: 1d
       QR_SECRET: dev-qr-secret-change-me
+      TMDB_API_KEY: ${TMDB_API_KEY:-}
       TMDB_BASE_URL: https://api.themoviedb.org/3
       CORS_ORIGIN: http://localhost:3000
     command: >
@@ -45,15 +46,13 @@ services:
     build:
       context: .
       dockerfile: apps/frontend/Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: http://localhost:3333
     restart: unless-stopped
     depends_on:
       - backend
     environment:
       NODE_ENV: production
       PORT: 3000
-      NEXT_PUBLIC_API_URL: http://localhost:3333
+      API_URL: http://backend:3333
     ports:
       # Porta do host configurável (padrão 3000). Use FRONTEND_PORT=3001 se a 3000 estiver ocupada.
       - '${FRONTEND_PORT:-3000}:3000'

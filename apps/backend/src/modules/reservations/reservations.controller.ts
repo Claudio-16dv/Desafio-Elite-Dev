@@ -29,12 +29,18 @@ export class ReservationsController {
   }
 
   @Post(':id/release')
-  release(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser): Promise<ReservationResponse> {
+  release(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ReservationResponse> {
     return this.releaseReservation.execute(id, user.id);
   }
 
   @Get(':id')
-  getById(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser): Promise<ReservationResponse> {
+  getById(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ReservationResponse> {
     return this.getReservation.execute(id, user.id);
   }
 }

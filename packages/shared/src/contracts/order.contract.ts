@@ -12,3 +12,14 @@ export interface OrderResponse {
   totalCents: number;
   tickets: TicketResponse[];
 }
+
+export interface OrderListItem {
+  id: string;
+  eventId: string;
+  eventTitle: string;
+  seatLabels: string[];
+  totalCents: number;
+  status: OrderStatus;
+  createdAt: string;
+  canCancel: boolean;
+}

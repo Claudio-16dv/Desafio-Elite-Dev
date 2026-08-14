@@ -1,1 +1,1 @@
-export * from './client';
+export { api, ApiError } from './client';

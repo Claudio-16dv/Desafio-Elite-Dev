@@ -9,9 +9,11 @@ import { TokenProvider } from './providers/token-provider';
 import { PrismaUsersRepository } from './repositories/prisma-users.repository';
 import { UsersRepository } from './repositories/users.repository';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { CreateGateUserUseCase } from './use-cases/create-gate-user.use-case';
 import { GetMeUseCase } from './use-cases/get-me.use-case';
 import { LoginUseCase } from './use-cases/login.use-case';
 import { RegisterUseCase } from './use-cases/register.use-case';
+import { UpdateProfileUseCase } from './use-cases/update-profile.use-case';
 
 type JwtExpiresIn = `${number}${'ms' | 's' | 'm' | 'h' | 'd' | 'w' | 'y'}`;
 
@@ -34,6 +36,8 @@ function getJwtExpiresIn(): JwtExpiresIn {
     LoginUseCase,
     RegisterUseCase,
     GetMeUseCase,
+    UpdateProfileUseCase,
+    CreateGateUserUseCase,
     JwtStrategy,
     { provide: UsersRepository, useClass: PrismaUsersRepository },
     { provide: PasswordHasher, useClass: BcryptPasswordHasher },

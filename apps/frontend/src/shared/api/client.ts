@@ -1,39 +1,43 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333';
+import 'server-only';
 
-type RequestOptions = RequestInit & { token?: string };
+import { cookies } from 'next/headers';
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { token, headers, ...rest } = options;
+const BASE_URL = process.env.API_URL ?? 'http://localhost:3333';
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...rest,
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    readonly body: unknown,
+  ) {
+    super(`API ${status}`);
+    this.name = 'ApiError';
+  }
+}
+
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const token = (await cookies()).get('access_token')?.value;
+  const response = await fetch(`${BASE_URL}${path}`, {
+    method,
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...headers,
     },
+    body: body === undefined ? undefined : JSON.stringify(body),
+    cache: 'no-store',
   });
 
+  const data = response.status === 204 ? null : await response.json().catch(() => null);
+
   if (!response.ok) {
-    throw new Error(`API ${response.status}: ${await response.text()}`);
+    throw new ApiError(response.status, data);
   }
 
-  return response.json() as Promise<T>;
+  return data as T;
 }
 
-/**
- * Cliente HTTP tipado. Só a camada de feature (query/action) importa isto —
- * page e componente nunca falam com a API direto.
- */
 export const api = {
-  get: <T>(path: string, options?: RequestOptions) =>
-    request<T>(path, { ...options, method: 'GET' }),
-  post: <T>(path: string, body?: unknown, options?: RequestOptions) =>
-    request<T>(path, { ...options, method: 'POST', body: JSON.stringify(body) }),
-  put: <T>(path: string, body?: unknown, options?: RequestOptions) =>
-    request<T>(path, { ...options, method: 'PUT', body: JSON.stringify(body) }),
-  patch: <T>(path: string, body?: unknown, options?: RequestOptions) =>
-    request<T>(path, { ...options, method: 'PATCH', body: JSON.stringify(body) }),
-  delete: <T>(path: string, options?: RequestOptions) =>
-    request<T>(path, { ...options, method: 'DELETE' }),
+  get: <T>(path: string) => request<T>('GET', path),
+  post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
+  patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, body),
+  del: <T>(path: string) => request<T>('DELETE', path),
 };

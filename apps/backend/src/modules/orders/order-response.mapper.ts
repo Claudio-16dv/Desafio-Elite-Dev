@@ -1,6 +1,19 @@
-import { OrderResponse } from '@app/shared';
+import { OrderListItem, OrderResponse, OrderStatus } from '@app/shared';
 import { QrSigner } from '../tickets/providers/qr-signer';
 import { OrderRecord } from './repositories/orders.repository';
+
+export function toOrderListItem(order: OrderRecord): OrderListItem {
+  return {
+    id: order.id,
+    eventId: order.eventId,
+    eventTitle: order.eventTitle,
+    seatLabels: order.seatLabels,
+    totalCents: order.totalCents,
+    status: order.status,
+    createdAt: order.createdAt.toISOString(),
+    canCancel: order.status === OrderStatus.PAID,
+  };
+}
 
 export function toOrderResponse(order: OrderRecord, qrSigner: QrSigner): OrderResponse {
   return {

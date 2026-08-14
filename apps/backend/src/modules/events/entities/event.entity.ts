@@ -1,7 +1,6 @@
+import type { EventLifecycleStatus } from '@app/shared';
 import { EventInvalidStateError } from '../errors/event-invalid-state.error';
 import { ForbiddenActionError } from '../errors/forbidden-action.error';
-
-export type EventLifecycleStatus = 'DRAFT' | 'PUBLISHED' | 'CANCELLED';
 
 export class EventEntity {
   constructor(
@@ -29,12 +28,12 @@ export class EventEntity {
   }
 
   canBeUpdated(): boolean {
-    return this.status === 'DRAFT';
+    return this.status !== 'CANCELLED';
   }
 
   assertCanBeUpdated(): void {
     if (!this.canBeUpdated()) {
-      throw new EventInvalidStateError('Apenas eventos em rascunho podem ser alterados');
+      throw new EventInvalidStateError('Eventos cancelados não podem ser alterados');
     }
   }
 

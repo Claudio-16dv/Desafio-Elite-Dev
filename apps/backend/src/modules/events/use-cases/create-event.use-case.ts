@@ -33,7 +33,10 @@ export class CreateEventUseCase {
     return toEventDetail(event, persistedSeats);
   }
 
-  private generateSeats(rows: number, columns: number): Array<Pick<SeatRecord, 'label' | 'rowLabel' | 'column'>> {
+  private generateSeats(
+    rows: number,
+    columns: number,
+  ): Array<Pick<SeatRecord, 'label' | 'rowLabel' | 'column'>> {
     return Array.from({ length: rows }, (_, rowIndex) => {
       const rowLabel = String.fromCharCode(65 + rowIndex);
       return Array.from({ length: columns }, (_, columnIndex) => ({

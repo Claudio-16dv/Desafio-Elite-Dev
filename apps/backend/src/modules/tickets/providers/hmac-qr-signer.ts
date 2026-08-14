@@ -26,9 +26,6 @@ export class HmacQrSigner extends QrSigner {
   }
 
   private createSignature(ticketId: string): string {
-    return crypto
-      .createHmac('sha256', process.env.QR_SECRET!)
-      .update(ticketId)
-      .digest('base64url');
+    return crypto.createHmac('sha256', process.env.QR_SECRET!).update(ticketId).digest('base64url');
   }
 }

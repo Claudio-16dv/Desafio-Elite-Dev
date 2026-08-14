@@ -1,4 +1,4 @@
-import { EventLifecycleStatus } from '../entities/event.entity';
+import type { EventLifecycleStatus } from '@app/shared';
 
 export interface EventRecord {
   id: string;
@@ -65,10 +65,17 @@ export interface ListPublishedEventsResult {
   total: number;
 }
 
+export interface ListOrganizerEventsInput {
+  organizerId: string;
+  skip: number;
+  take: number;
+}
+
 export abstract class EventsRepository {
   abstract createWithSeats(input: CreateEventInput): Promise<EventRecord>;
   abstract update(id: string, input: UpdateEventInput): Promise<EventRecord>;
   abstract findById(id: string): Promise<EventRecord | null>;
   abstract listPublished(input: ListPublishedEventsInput): Promise<ListPublishedEventsResult>;
+  abstract listByOrganizer(input: ListOrganizerEventsInput): Promise<ListPublishedEventsResult>;
   abstract findSeats(eventId: string, now: Date): Promise<SeatRecord[]>;
 }

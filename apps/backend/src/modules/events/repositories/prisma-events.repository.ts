@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Event, EventStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../database/prisma/prisma.service';
-import { EventLifecycleStatus } from '../entities/event.entity';
+import type { EventLifecycleStatus } from '@app/shared';
 import {
   CreateEventInput,
   EventRecord,
   EventsRepository,
   ListPublishedEventsInput,
   ListPublishedEventsResult,
+  ListOrganizerEventsInput,
   SeatRecord,
   UpdateEventInput,
 } from './events.repository';
@@ -97,6 +98,21 @@ export class PrismaEventsRepository extends EventsRepository {
     return { items: events.map((event) => this.toRecord(event)), total };
   }
 
+  async listByOrganizer(input: ListOrganizerEventsInput): Promise<ListPublishedEventsResult> {
+    const where: Prisma.EventWhereInput = { organizerId: input.organizerId };
+    const [events, total] = await this.prisma.$transaction([
+      this.prisma.event.findMany({
+        where,
+        orderBy: { startsAt: 'asc' },
+        skip: input.skip,
+        take: input.take,
+      }),
+      this.prisma.event.count({ where }),
+    ]);
+
+    return { items: events.map((event) => this.toRecord(event)), total };
+  }
+
   async findSeats(eventId: string, now: Date): Promise<SeatRecord[]> {
     const seats = await this.prisma.seat.findMany({
       where: { eventId },
@@ -109,10 +125,7 @@ export class PrismaEventsRepository extends EventsRepository {
         reservationSeats: {
           where: {
             reservation: {
-              OR: [
-                { status: 'CONFIRMED' },
-                { status: 'HELD', expiresAt: { gt: now } },
-              ],
+              OR: [{ status: 'CONFIRMED' }, { status: 'HELD', expiresAt: { gt: now } }],
             },
           },
           select: { id: true },

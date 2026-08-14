@@ -3,7 +3,7 @@ import { Prisma, Role as PrismaRole, User } from '@prisma/client';
 import { Role } from '@app/shared';
 import { PrismaService } from '../../../database/prisma/prisma.service';
 import { EmailAlreadyUsedError } from '../errors/email-already-used.error';
-import { CreateUserInput, UserRecord, UsersRepository } from './users.repository';
+import { CreateUserInput, UpdateUserInput, UserRecord, UsersRepository } from './users.repository';
 
 @Injectable()
 export class PrismaUsersRepository extends UsersRepository {
@@ -38,6 +38,17 @@ export class PrismaUsersRepository extends UsersRepository {
       }
       throw error;
     }
+  }
+
+  async update(id: string, input: UpdateUserInput): Promise<UserRecord> {
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: {
+        name: input.name,
+        passwordHash: input.passwordHash,
+      },
+    });
+    return this.toRecord(user);
   }
 
   private toRecord(user: User): UserRecord {

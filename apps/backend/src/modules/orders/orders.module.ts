@@ -9,6 +9,7 @@ import { OrdersRepository } from './repositories/orders.repository';
 import { CancelOrderUseCase } from './use-cases/cancel-order.use-case';
 import { CheckoutUseCase } from './use-cases/checkout.use-case';
 import { GetOrderUseCase } from './use-cases/get-order.use-case';
+import { ListMyOrdersUseCase } from './use-cases/list-my-orders.use-case';
 
 @Module({
   imports: [ReservationsModule, TicketsModule],
@@ -17,6 +18,7 @@ import { GetOrderUseCase } from './use-cases/get-order.use-case';
     CheckoutUseCase,
     GetOrderUseCase,
     CancelOrderUseCase,
+    ListMyOrdersUseCase,
     { provide: OrdersRepository, useClass: PrismaOrdersRepository },
     { provide: PaymentGateway, useClass: FakePaymentGateway },
   ],

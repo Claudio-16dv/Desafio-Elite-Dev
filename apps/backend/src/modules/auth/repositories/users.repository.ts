@@ -15,8 +15,14 @@ export interface CreateUserInput {
   role: Role;
 }
 
+export interface UpdateUserInput {
+  name?: string;
+  passwordHash?: string;
+}
+
 export abstract class UsersRepository {
   abstract findByEmail(email: string): Promise<UserRecord | null>;
   abstract findById(id: string): Promise<UserRecord | null>;
   abstract create(input: CreateUserInput): Promise<UserRecord>;
+  abstract update(id: string, input: UpdateUserInput): Promise<UserRecord>;
 }
