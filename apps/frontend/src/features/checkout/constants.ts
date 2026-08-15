@@ -1,0 +1,1 @@
+export const MAX_SEATS_PER_RESERVATION = 10;

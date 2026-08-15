@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, Ticket } from '@prisma/client';
-import { TicketStatus } from '@app/shared';
+import { EventStatus, Prisma, Ticket, TicketStatus as PrismaTicketStatus } from '@prisma/client';
+import { EventLifecycleStatus, TicketStatus } from '@app/shared';
 import { PrismaService } from '../../../database/prisma/prisma.service';
+import { TicketEventCancelledError } from '../errors/ticket-event-cancelled.error';
 import { TicketNotFoundError } from '../errors/ticket-not-found.error';
 import { TicketRecord, TicketsRepository } from './tickets.repository';
 
@@ -12,6 +13,7 @@ type TicketWithDetails = Prisma.TicketGetPayload<{
         title: true;
         startsAt: true;
         venue: true;
+        status: true;
       };
     };
     seat: {
@@ -62,18 +64,38 @@ export class PrismaTicketsRepository extends TicketsRepository {
   }
 
   async setShareToken(id: string, shareToken: string): Promise<TicketRecord> {
-    const ticket = await this.prisma.ticket.update({
-      where: { id },
+    const updated = await this.prisma.ticket.updateMany({
+      where: {
+        id,
+        status: { not: PrismaTicketStatus.EVENT_CANCELLED },
+        event: { status: EventStatus.PUBLISHED },
+      },
       data: { shareToken },
-      include: this.detailsInclude,
     });
-    return this.toRecord(ticket);
+
+    if (!updated.count) {
+      const ticket = await this.findById(id);
+      if (!ticket) {
+        throw new TicketNotFoundError();
+      }
+      throw new TicketEventCancelledError();
+    }
+
+    const ticket = await this.findById(id);
+    if (!ticket) {
+      throw new TicketNotFoundError();
+    }
+    return ticket;
   }
 
   async markUsedIfValid(id: string, now: Date): Promise<number> {
     const result = await this.prisma.ticket.updateMany({
-      where: { id, status: 'VALID' },
-      data: { status: 'USED', usedAt: now },
+      where: {
+        id,
+        status: PrismaTicketStatus.VALID,
+        event: { status: EventStatus.PUBLISHED },
+      },
+      data: { status: PrismaTicketStatus.USED, usedAt: now },
     });
     return result.count;
   }
@@ -84,6 +106,7 @@ export class PrismaTicketsRepository extends TicketsRepository {
         title: true,
         startsAt: true,
         venue: true,
+        status: true,
       },
     },
     seat: {
@@ -112,6 +135,7 @@ export class PrismaTicketsRepository extends TicketsRepository {
         title: ticket.event.title,
         startsAt: ticket.event.startsAt,
         venue: ticket.event.venue,
+        status: ticket.event.status as EventLifecycleStatus,
       },
       seat: { label: ticket.seat.label },
     };

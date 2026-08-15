@@ -1,9 +1,10 @@
-import { TicketStatus } from '@app/shared';
+import { EventLifecycleStatus, TicketStatus } from '@app/shared';
 
 export interface TicketEventRecord {
   title: string;
   startsAt: Date;
   venue: string;
+  status: EventLifecycleStatus;
 }
 
 export interface TicketSeatRecord {

@@ -1,6 +1,11 @@
 import { CalendarDays } from 'lucide-react';
+import { redirect } from 'next/navigation';
 import { EventCard } from '@/features/events/components/event-card';
 import { EventFilters } from '@/features/events/components/event-filters';
+import {
+  buildEventsPageHref,
+  EventPagination,
+} from '@/features/events/components/event-pagination';
 import { eventFiltersSchema, type EventFiltersInput } from '@/features/events/schema';
 import { listPublished } from '@/features/events/queries';
 import { Container, EmptyState, PageHeader } from '@/shared/ui';
@@ -9,6 +14,16 @@ export const dynamic = 'force-dynamic';
 
 function first(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function positivePage(value: string | string[] | undefined) {
+  const normalized = first(value);
+  if (!normalized || !/^\d+$/.test(normalized)) {
+    return 1;
+  }
+
+  const page = Number(normalized);
+  return Number.isSafeInteger(page) && page > 0 ? page : 1;
 }
 
 export default async function EventsPage({
@@ -24,6 +39,7 @@ export default async function EventsPage({
     minPrice: first(raw.minPrice) ?? '',
     maxPrice: first(raw.maxPrice) ?? '',
   }) as EventFiltersInput;
+  const page = positivePage(raw.page);
 
   const events = await listPublished({
     query: defaults.query || undefined,
@@ -31,7 +47,15 @@ export default async function EventsPage({
     dateTo: defaults.dateTo || undefined,
     minPrice: defaults.minPrice ? Number(defaults.minPrice) * 100 : undefined,
     maxPrice: defaults.maxPrice ? Number(defaults.maxPrice) * 100 : undefined,
+    page,
+    pageSize: 12,
   });
+
+  const totalPages = Math.ceil(events.total / events.pageSize);
+
+  if (events.total > 0 && page > totalPages) {
+    redirect(buildEventsPageHref(totalPages, defaults));
+  }
 
   return (
     <Container className="py-10 sm:py-14">
@@ -53,6 +77,7 @@ export default async function EventsPage({
               <EventCard key={event.id} event={event} />
             ))}
           </div>
+          <EventPagination currentPage={page} totalPages={totalPages} filters={defaults} />
         </>
       ) : (
         <EmptyState

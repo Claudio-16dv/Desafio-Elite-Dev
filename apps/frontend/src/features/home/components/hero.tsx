@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, Play } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import Link from 'next/link';
 import { Button } from '@/shared/ui';
@@ -61,12 +61,6 @@ export function Hero() {
             <Link href="/events">
               Ver eventos
               <ArrowRight className="size-5" />
-            </Link>
-          </Button>
-          <Button asChild size="lg" variant="outline">
-            <Link href="/register">
-              <Play className="size-4 fill-current" />
-              Criar conta
             </Link>
           </Button>
         </motion.div>

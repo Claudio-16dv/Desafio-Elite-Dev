@@ -19,6 +19,7 @@ const statusPresentation = {
   [OrderStatus.PAID]: { label: 'Pago', variant: 'success' as const },
   [OrderStatus.REFUSED]: { label: 'Recusado', variant: 'danger' as const },
   [OrderStatus.CANCELLED]: { label: 'Cancelado', variant: 'muted' as const },
+  [OrderStatus.REFUND_REQUESTED]: { label: 'Estorno solicitado', variant: 'warning' as const },
 };
 
 export function OrderCard({ order }: { order: OrderListItem }) {
@@ -54,7 +55,9 @@ export function OrderCard({ order }: { order: OrderListItem }) {
           <p className="font-display text-lg font-semibold">
             {money.format(order.totalCents / 100)}
           </p>
-          {order.canCancel ? <CancelOrderDialog orderId={order.id} /> : null}
+          {order.canCancel && order.status !== OrderStatus.REFUND_REQUESTED ? (
+            <CancelOrderDialog orderId={order.id} />
+          ) : null}
         </div>
       </CardContent>
     </Card>

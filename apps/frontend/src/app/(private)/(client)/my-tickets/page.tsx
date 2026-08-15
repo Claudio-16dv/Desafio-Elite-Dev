@@ -13,7 +13,7 @@ export default async function MyTicketsPage() {
       <PageHeader
         eyebrow="Sua coleção"
         title="Meus ingressos"
-        description="Seus QR codes ficam seguros aqui e prontos para a entrada."
+        description="Seus ingressos ativos e o histórico de eventos ficam reunidos aqui."
       />
       {tickets.length ? (
         <div className="mt-8 grid gap-5 lg:grid-cols-2">

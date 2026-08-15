@@ -19,7 +19,7 @@ export class CancelEventUseCase {
     entity.assertOwnedBy(userId);
     entity.cancel();
 
-    const updated = await this.events.update(id, { status: entity.getStatus() });
+    const updated = await this.events.cancel(id);
     const seats = await this.events.findSeats(updated.id, new Date());
     return toEventDetail(updated, seats);
   }

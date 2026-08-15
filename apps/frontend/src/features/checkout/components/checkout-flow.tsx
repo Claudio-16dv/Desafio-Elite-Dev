@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/shared/ui';
 import { checkoutOrder, holdSeats, releaseReservation } from '../actions';
+import { MAX_SEATS_PER_RESERVATION } from '../constants';
 import { SeatMap } from './seat-map';
 
 const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -24,9 +25,19 @@ export function CheckoutFlow({ event, seats }: { event: EventDetail; seats: Seat
   const [pending, setPending] = useState(false);
 
   function toggleSeat(seatId: string) {
-    setSelectedSeatIds((current) =>
-      current.includes(seatId) ? current.filter((id) => id !== seatId) : [...current, seatId],
-    );
+    if (selectedSeatIds.includes(seatId)) {
+      setSelectedSeatIds((current) => current.filter((id) => id !== seatId));
+      return;
+    }
+
+    if (selectedSeatIds.length >= MAX_SEATS_PER_RESERVATION) {
+      toast.error(
+        `Você pode escolher até ${MAX_SEATS_PER_RESERVATION} assentos. Desmarque um para selecionar outro.`,
+      );
+      return;
+    }
+
+    setSelectedSeatIds((current) => [...current, seatId]);
   }
 
   async function createReservation() {

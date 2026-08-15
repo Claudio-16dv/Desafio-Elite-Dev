@@ -69,11 +69,15 @@ export function EventDetailView({
             </p>
           </CardHeader>
           <CardContent>
-            <Button asChild className="w-full" disabled={event.available === 0}>
-              <Link href={reservationHref}>
-                {event.available === 0 ? 'Esgotado' : reservationLabel}
-              </Link>
-            </Button>
+            {event.available === 0 ? (
+              <Button type="button" className="w-full" disabled>
+                Esgotado
+              </Button>
+            ) : (
+              <Button asChild className="w-full">
+                <Link href={reservationHref}>{reservationLabel}</Link>
+              </Button>
+            )}
             <p className="mt-4 text-center text-xs leading-5 text-muted-foreground">
               Pagamento simulado e emissão segura de ingresso com QR assinado.
             </p>

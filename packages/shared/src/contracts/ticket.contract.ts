@@ -6,8 +6,8 @@ export interface TicketResponse {
   eventTitle: string;
   seatLabel: string;
   status: TicketStatus;
-  code: string;
-  qrToken: string;
+  code?: string;
+  qrToken?: string;
   startsAt: string;
   venue: string;
 }

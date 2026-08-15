@@ -1,11 +1,15 @@
 import { z } from 'zod';
+import { MAX_SEATS_PER_RESERVATION } from './constants';
 
 export const holdSeatsSchema = z.object({
   eventId: z.string().uuid('Evento inválido.'),
   seatIds: z
     .array(z.string().uuid('Assento inválido.'))
     .min(1, 'Selecione pelo menos um assento.')
-    .max(10, 'Escolha no máximo 10 assentos por reserva.'),
+    .max(
+      MAX_SEATS_PER_RESERVATION,
+      `Escolha no máximo ${MAX_SEATS_PER_RESERVATION} assentos por reserva.`,
+    ),
 });
 
 export const checkoutSchema = z.object({

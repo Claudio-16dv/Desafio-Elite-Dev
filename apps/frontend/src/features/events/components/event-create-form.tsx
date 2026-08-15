@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Button, Input, Label, Textarea } from '@/shared/ui';
 import { createEvent } from '../actions';
+import { localDateTimeToIso } from '../lib/date-time';
 import { createEventFormSchema, type CreateEventFormInput } from '../schema';
 
 export function EventCreateForm({
@@ -36,7 +37,10 @@ export function EventCreateForm({
 
   async function onSubmit(values: CreateEventFormInput) {
     try {
-      const event = await createEvent(values);
+      const event = await createEvent({
+        ...values,
+        startsAt: localDateTimeToIso(values.startsAt),
+      });
       toast.success('Evento criado como rascunho. Revise e publique quando estiver pronto.');
       onCreated(event);
     } catch {

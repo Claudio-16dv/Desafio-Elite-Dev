@@ -1,5 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { Event, EventStatus, Prisma } from '@prisma/client';
+import {
+  Event,
+  EventStatus,
+  OrderStatus,
+  Prisma,
+  ReservationStatus,
+  TicketStatus,
+} from '@prisma/client';
 import { PrismaService } from '../../../database/prisma/prisma.service';
 import type { EventLifecycleStatus } from '@app/shared';
 import {
@@ -61,6 +68,53 @@ export class PrismaEventsRepository extends EventsRepository {
     return this.toRecord(event);
   }
 
+  async cancel(id: string): Promise<EventRecord> {
+    const event = await this.prisma.$transaction(async (tx) => {
+      const cancelled = await tx.event.update({
+        where: { id },
+        data: { status: EventStatus.CANCELLED },
+      });
+
+      const paidOrders = await tx.order.findMany({
+        where: { eventId: id, status: OrderStatus.PAID },
+        select: { id: true },
+      });
+      const paidOrderIds = paidOrders.map((order) => order.id);
+
+      if (paidOrderIds.length) {
+        await tx.order.updateMany({
+          where: { id: { in: paidOrderIds }, status: OrderStatus.PAID },
+          data: { status: OrderStatus.REFUND_REQUESTED },
+        });
+
+        await tx.ticket.updateMany({
+          where: { orderId: { in: paidOrderIds } },
+          data: { status: TicketStatus.EVENT_CANCELLED },
+        });
+      }
+
+      const heldReservations = await tx.reservation.findMany({
+        where: { eventId: id, status: ReservationStatus.HELD },
+        select: { id: true },
+      });
+      const heldReservationIds = heldReservations.map((reservation) => reservation.id);
+
+      if (heldReservationIds.length) {
+        await tx.reservationSeat.deleteMany({
+          where: { reservationId: { in: heldReservationIds } },
+        });
+        await tx.reservation.updateMany({
+          where: { id: { in: heldReservationIds }, status: ReservationStatus.HELD },
+          data: { status: ReservationStatus.RELEASED },
+        });
+      }
+
+      return cancelled;
+    });
+
+    return this.toRecord(event);
+  }
+
   async findById(id: string): Promise<EventRecord | null> {
     const event = await this.prisma.event.findUnique({ where: { id } });
     return event ? this.toRecord(event) : null;
@@ -70,12 +124,15 @@ export class PrismaEventsRepository extends EventsRepository {
     const where: Prisma.EventWhereInput = { status: EventStatus.PUBLISHED };
 
     if (input.query) {
-      where.title = { contains: input.query, mode: 'insensitive' };
+      where.OR = [
+        { title: { contains: input.query, mode: 'insensitive' } },
+        { venue: { contains: input.query, mode: 'insensitive' } },
+      ];
     }
     if (input.dateFrom || input.dateTo) {
       where.startsAt = {
         ...(input.dateFrom ? { gte: input.dateFrom } : {}),
-        ...(input.dateTo ? { lte: input.dateTo } : {}),
+        ...(input.dateTo ? { lt: input.dateTo } : {}),
       };
     }
     if (input.minPrice !== undefined || input.maxPrice !== undefined) {

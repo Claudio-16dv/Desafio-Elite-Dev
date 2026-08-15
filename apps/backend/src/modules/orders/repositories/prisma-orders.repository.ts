@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  EventStatus,
   OrderStatus as PrismaOrderStatus,
   Prisma,
   ReservationStatus as PrismaReservationStatus,
@@ -7,9 +8,11 @@ import {
 import { OrderStatus, TicketStatus } from '@app/shared';
 import { PrismaService } from '../../../database/prisma/prisma.service';
 import { ReservationExpiredError } from '../../reservations/errors/reservation-expired.error';
+import { EventNotPublishedError } from '../../reservations/errors/event-not-published.error';
 import { ReservationNotHeldError } from '../../reservations/errors/reservation-not-held.error';
 import { ReservationNotFoundError } from '../../reservations/errors/reservation-not-found.error';
 import { OrderNotFoundError } from '../errors/order-not-found.error';
+import { OrderNotPaidError } from '../errors/order-not-paid.error';
 import {
   CreatePaidOrderInput,
   CreateRefusedOrderInput,
@@ -72,6 +75,8 @@ export class PrismaOrdersRepository extends OrdersRepository {
 
   async createPaidOrderWithTickets(input: CreatePaidOrderInput): Promise<OrderRecord> {
     return this.prisma.$transaction(async (tx) => {
+      await this.assertEventCanBeCheckedOut(tx, input.eventId);
+
       const reservation = await tx.reservation.findUnique({
         where: { id: input.reservationId },
         select: { id: true, status: true, expiresAt: true },
@@ -121,6 +126,8 @@ export class PrismaOrdersRepository extends OrdersRepository {
 
   async createRefusedOrderAndRelease(input: CreateRefusedOrderInput): Promise<OrderRecord> {
     return this.prisma.$transaction(async (tx) => {
+      await this.assertEventCanBeCheckedOut(tx, input.eventId);
+
       const reservation = await tx.reservation.findUnique({
         where: { id: input.reservationId },
         select: { id: true, status: true, expiresAt: true },
@@ -174,15 +181,29 @@ export class PrismaOrdersRepository extends OrdersRepository {
 
   async cancel(id: string): Promise<OrderRecord> {
     return this.prisma.$transaction(async (tx) => {
+      const orderReference = await tx.order.findUnique({
+        where: { id },
+        select: { eventId: true },
+      });
+      if (!orderReference) {
+        throw new OrderNotFoundError();
+      }
+
+      await this.assertEventCanBeCheckedOut(tx, orderReference.eventId);
+
       const order = await this.findDetails(tx, id);
       if (!order) {
         throw new OrderNotFoundError();
       }
 
-      await tx.order.update({
-        where: { id },
+      const cancelled = await tx.order.updateMany({
+        where: { id, status: PrismaOrderStatus.PAID },
         data: { status: PrismaOrderStatus.CANCELLED },
       });
+      if (!cancelled.count) {
+        throw new OrderNotPaidError();
+      }
+
       await tx.ticket.deleteMany({ where: { orderId: id } });
       await tx.reservationSeat.deleteMany({ where: { reservationId: order.reservationId } });
       await tx.reservation.update({
@@ -196,6 +217,19 @@ export class PrismaOrdersRepository extends OrdersRepository {
         tickets: [],
       };
     });
+  }
+
+  private async assertEventCanBeCheckedOut(
+    tx: Prisma.TransactionClient,
+    eventId: string,
+  ): Promise<void> {
+    const events = await tx.$queryRaw<Array<{ status: EventStatus }>>(
+      Prisma.sql`SELECT "status" FROM "Event" WHERE "id" = ${eventId} FOR SHARE`,
+    );
+
+    if (events[0]?.status !== EventStatus.PUBLISHED) {
+      throw new EventNotPublishedError();
+    }
   }
 
   private assertReservationCanBeCheckedOut(

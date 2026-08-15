@@ -36,7 +36,7 @@ export function EventFilters({ defaults }: { defaults: EventFiltersInput }) {
     <form
       onSubmit={form.handleSubmit(onSubmit)}
       noValidate
-      className="grid gap-4 rounded-[--radius] border border-border bg-card/60 p-4 lg:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))_auto] lg:items-end"
+      className="grid gap-4 rounded-[--radius] border border-border bg-card/60 p-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1.5fr)_repeat(4,minmax(0,1fr))_auto] xl:items-end"
     >
       <div className="grid gap-2">
         <Label htmlFor="event-query">Buscar</Label>
@@ -59,6 +59,16 @@ export function EventFilters({ defaults }: { defaults: EventFiltersInput }) {
       <div className="grid gap-2">
         <Label htmlFor="event-date-from">A partir de</Label>
         <Input id="event-date-from" type="date" {...form.register('dateFrom')} />
+        {form.formState.errors.dateFrom ? (
+          <p className="text-xs text-danger">{form.formState.errors.dateFrom.message}</p>
+        ) : null}
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="event-date-to">Até</Label>
+        <Input id="event-date-to" type="date" {...form.register('dateTo')} />
+        {form.formState.errors.dateTo ? (
+          <p className="text-xs text-danger">{form.formState.errors.dateTo.message}</p>
+        ) : null}
       </div>
       <div className="grid gap-2">
         <Label htmlFor="event-min-price">Preço mín. (R$)</Label>

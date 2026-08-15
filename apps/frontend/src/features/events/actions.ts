@@ -4,9 +4,9 @@ import type { CatalogItem, CreateEventRequest, EventDetail, UpdateEventRequest }
 import { api } from '@/shared/api';
 import {
   catalogSearchSchema,
-  createEventFormSchema,
+  createEventActionSchema,
   eventIdSchema,
-  updateEventFormSchema,
+  updateEventActionSchema,
 } from './schema';
 import { searchCatalog } from './queries';
 
@@ -25,13 +25,13 @@ export async function searchEventCatalog(input: unknown): Promise<CatalogItem[]>
 }
 
 export async function createEvent(input: unknown): Promise<EventDetail> {
-  const data = createEventFormSchema.parse(input);
+  const data = createEventActionSchema.parse(input);
   const request: CreateEventRequest = {
     sourceId: toOptional(data.sourceId),
     title: data.title,
     description: toOptional(data.description),
     venue: data.venue,
-    startsAt: new Date(data.startsAt).toISOString(),
+    startsAt: data.startsAt,
     priceCents: priceToCents(data.price),
     rows: data.rows,
     columns: data.columns,
@@ -43,12 +43,12 @@ export async function createEvent(input: unknown): Promise<EventDetail> {
 
 export async function updateEvent(eventId: unknown, input: unknown): Promise<EventDetail> {
   const id = eventIdSchema.parse(eventId);
-  const data = updateEventFormSchema.parse(input);
+  const data = updateEventActionSchema.parse(input);
   const request: UpdateEventRequest = {
     title: data.title,
     description: toOptional(data.description),
     venue: data.venue,
-    startsAt: new Date(data.startsAt).toISOString(),
+    startsAt: data.startsAt,
     priceCents: priceToCents(data.price),
     imageUrl: toOptional(data.imageUrl),
   };

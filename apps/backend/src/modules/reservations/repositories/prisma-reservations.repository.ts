@@ -49,7 +49,9 @@ export class PrismaReservationsRepository extends ReservationsRepository {
     const expiresAt = new Date(now.getTime() + input.ttlMinutes * 60_000);
 
     return this.prisma.$transaction(async (tx) => {
-      const event = await tx.event.findUnique({ where: { id: input.eventId } });
+      const [event] = await tx.$queryRaw<Array<{ status: EventStatus }>>(
+        Prisma.sql`SELECT "status" FROM "Event" WHERE "id" = ${input.eventId} FOR SHARE`,
+      );
       if (!event) {
         throw new DomainException('Evento não encontrado', 'EVENT_NOT_FOUND', 404);
       }

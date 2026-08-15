@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { ValidateTicketRequest, ValidationOutcome, ValidationResultResponse } from '@app/shared';
+import {
+  TicketStatus,
+  ValidateTicketRequest,
+  ValidationOutcome,
+  ValidationResultResponse,
+} from '@app/shared';
 import { QrSigner } from '../../tickets/providers/qr-signer';
 import { TicketsRepository } from '../../tickets/repositories/tickets.repository';
 
@@ -23,9 +28,20 @@ export class ValidateTicketUseCase {
     if (ticket.eventId !== input.eventId) {
       return { outcome: ValidationOutcome.WRONG_EVENT };
     }
+    if (ticket.status === TicketStatus.EVENT_CANCELLED || ticket.event.status !== 'PUBLISHED') {
+      return { outcome: ValidationOutcome.INVALID };
+    }
 
     const updated = await this.tickets.markUsedIfValid(ticketId, new Date());
     if (!updated) {
+      const current = await this.tickets.findById(ticketId);
+      if (
+        !current ||
+        current.status === TicketStatus.EVENT_CANCELLED ||
+        current.event.status !== 'PUBLISHED'
+      ) {
+        return { outcome: ValidationOutcome.INVALID };
+      }
       return { outcome: ValidationOutcome.ALREADY_USED };
     }
 

@@ -24,6 +24,7 @@ import {
   Textarea,
 } from '@/shared/ui';
 import { cancelEvent, publishEvent, updateEvent } from '../actions';
+import { isoToLocalDateTime, localDateTimeToIso } from '../lib/date-time';
 import { updateEventFormSchema, type UpdateEventFormInput } from '../schema';
 
 const statusConfig: Record<
@@ -47,21 +48,12 @@ const statusConfig: Record<
   },
 };
 
-function toDateTimeLocal(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.valueOf())) {
-    return '';
-  }
-
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
-}
-
 function formValues(event: OrganizerEventSummary): UpdateEventFormInput {
   return {
     title: event.title,
     description: event.description ?? '',
     venue: event.venue,
-    startsAt: toDateTimeLocal(event.date),
+    startsAt: isoToLocalDateTime(event.date),
     price: String(event.priceCents / 100).replace('.', ','),
     imageUrl: event.imageUrl ?? '',
   };
@@ -92,7 +84,7 @@ export function EventManagementPanel({ event }: { event: OrganizerEventSummary }
     try {
       await updateEvent(event.id, {
         ...values,
-        startsAt: new Date(values.startsAt).toISOString(),
+        startsAt: localDateTimeToIso(values.startsAt),
       });
       toast.success('Alterações salvas.');
       router.refresh();

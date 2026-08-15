@@ -30,6 +30,7 @@ enum ReservationStatus {
 enum OrderStatus {
   PENDING
   PAID
+  REFUND_REQUESTED
   REFUSED
   CANCELLED
 }
@@ -37,6 +38,7 @@ enum OrderStatus {
 enum TicketStatus {
   VALID
   USED
+  EVENT_CANCELLED
 }
 
 model User {

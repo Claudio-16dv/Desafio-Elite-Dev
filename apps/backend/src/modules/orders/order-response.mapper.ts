@@ -1,4 +1,4 @@
-import { OrderListItem, OrderResponse, OrderStatus } from '@app/shared';
+import { OrderListItem, OrderResponse, OrderStatus, TicketStatus } from '@app/shared';
 import { QrSigner } from '../tickets/providers/qr-signer';
 import { OrderRecord } from './repositories/orders.repository';
 
@@ -26,8 +26,12 @@ export function toOrderResponse(order: OrderRecord, qrSigner: QrSigner): OrderRe
       eventTitle: ticket.eventTitle,
       seatLabel: ticket.seatLabel,
       status: ticket.status,
-      code: ticket.code,
-      qrToken: qrSigner.sign(ticket.id),
+      ...(ticket.status === TicketStatus.EVENT_CANCELLED
+        ? {}
+        : {
+            code: ticket.code,
+            qrToken: qrSigner.sign(ticket.id),
+          }),
       startsAt: ticket.startsAt.toISOString(),
       venue: ticket.venue,
     })),

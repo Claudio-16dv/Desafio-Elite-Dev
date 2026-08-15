@@ -21,11 +21,17 @@ const toastByOutcome: Record<ValidationOutcome, { message: string; success?: boo
 export function GateValidationPanel({ events }: { events: EventSummary[] }) {
   const [eventId, setEventId] = useState(events[0]?.id ?? '');
   const [result, setResult] = useState<ValidationResultResponse | null>(null);
+  const [technicalError, setTechnicalError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   async function submit(input: { token?: string; code?: string }) {
+    setResult(null);
+    setTechnicalError(null);
+
     if (!eventId) {
-      toast.error('Selecione o evento que está sendo validado.');
+      const message = 'Selecione o evento que está sendo validado.';
+      setTechnicalError(message);
+      toast.error(message);
       return;
     }
 
@@ -40,7 +46,9 @@ export function GateValidationPanel({ events }: { events: EventSummary[] }) {
         toast.error(toastItem.message);
       }
     } catch {
-      toast.error('Não foi possível validar este ingresso. Tente novamente.');
+      const message = 'Não foi possível validar este ingresso. Tente novamente.';
+      setTechnicalError(message);
+      toast.error(message);
     } finally {
       setPending(false);
     }
@@ -67,6 +75,7 @@ export function GateValidationPanel({ events }: { events: EventSummary[] }) {
               onChange={(event) => {
                 setEventId(event.target.value);
                 setResult(null);
+                setTechnicalError(null);
               }}
               disabled={pending}
               className="h-11 rounded-[--radius] border border-border bg-muted/40 px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
@@ -83,8 +92,23 @@ export function GateValidationPanel({ events }: { events: EventSummary[] }) {
         <ManualCodeForm onSubmitCode={(code) => submit({ code })} disabled={pending} />
       </div>
       <aside className="lg:sticky lg:top-24">
-        {result ? (
+        {pending ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="rounded-[--radius] border border-primary/30 bg-primary/5 p-8 text-center text-sm leading-6 text-muted-foreground"
+          >
+            Validando ingresso…
+          </div>
+        ) : result ? (
           <ValidationResult result={result} />
+        ) : technicalError ? (
+          <div
+            role="alert"
+            className="rounded-[--radius] border border-danger/40 bg-danger/10 p-8 text-center text-sm leading-6 text-danger"
+          >
+            {technicalError}
+          </div>
         ) : (
           <div className="rounded-[--radius] border border-dashed border-border bg-card/40 p-8 text-center text-sm leading-6 text-muted-foreground">
             O resultado da validação aparecerá aqui em destaque.

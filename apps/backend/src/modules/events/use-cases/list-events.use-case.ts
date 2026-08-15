@@ -4,6 +4,11 @@ import { ListEventsDto } from '../dto/list-events.dto';
 import { toEventSummary } from '../event-response.mapper';
 import { EventsRepository } from '../repositories/events.repository';
 
+function startOfNextUtcDay(value: string): Date {
+  const [year, month, day] = value.slice(0, 10).split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day + 1));
+}
+
 @Injectable()
 export class ListEventsUseCase {
   constructor(private readonly events: EventsRepository) {}
@@ -14,7 +19,7 @@ export class ListEventsUseCase {
     const result = await this.events.listPublished({
       query: input.query,
       dateFrom: input.dateFrom ? new Date(input.dateFrom) : undefined,
-      dateTo: input.dateTo ? new Date(input.dateTo) : undefined,
+      dateTo: input.dateTo ? startOfNextUtcDay(input.dateTo) : undefined,
       minPrice: input.minPrice,
       maxPrice: input.maxPrice,
       skip: (page - 1) * pageSize,

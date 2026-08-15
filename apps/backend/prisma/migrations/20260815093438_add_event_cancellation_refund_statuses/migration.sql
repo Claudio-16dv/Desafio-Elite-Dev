@@ -1,0 +1,5 @@
+-- AlterEnum
+ALTER TYPE "OrderStatus" ADD VALUE 'REFUND_REQUESTED';
+
+-- AlterEnum
+ALTER TYPE "TicketStatus" ADD VALUE 'EVENT_CANCELLED';

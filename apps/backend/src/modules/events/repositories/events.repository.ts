@@ -74,6 +74,7 @@ export interface ListOrganizerEventsInput {
 export abstract class EventsRepository {
   abstract createWithSeats(input: CreateEventInput): Promise<EventRecord>;
   abstract update(id: string, input: UpdateEventInput): Promise<EventRecord>;
+  abstract cancel(id: string): Promise<EventRecord>;
   abstract findById(id: string): Promise<EventRecord | null>;
   abstract listPublished(input: ListPublishedEventsInput): Promise<ListPublishedEventsResult>;
   abstract listByOrganizer(input: ListOrganizerEventsInput): Promise<ListPublishedEventsResult>;

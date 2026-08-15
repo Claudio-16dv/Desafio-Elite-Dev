@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomBytes } from 'node:crypto';
 import { ShareLinkResponse } from '@app/shared';
+import { TicketEntity } from '../entities/ticket.entity';
 import { TicketForbiddenError } from '../errors/ticket-forbidden.error';
 import { TicketNotFoundError } from '../errors/ticket-not-found.error';
 import { TicketsRepository } from '../repositories/tickets.repository';
@@ -21,6 +22,9 @@ export class CreateShareLinkUseCase {
     if (ticket.userId !== userId) {
       throw new TicketForbiddenError();
     }
+
+    const entity = new TicketEntity(ticket.id, ticket.status, ticket.usedAt ?? undefined);
+    entity.assertCanBeShared(ticket.event.status);
 
     const shareToken = ticket.shareToken ?? randomBytes(24).toString('base64url');
     if (!ticket.shareToken) {
