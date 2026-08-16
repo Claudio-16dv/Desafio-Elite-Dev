@@ -62,5 +62,20 @@ services:
       # Porta do host configurável (padrão 3000). Use FRONTEND_PORT=3001 se a 3000 estiver ocupada.
       - '${FRONTEND_PORT:-3000}:3000'
 
+  # Roda as suítes de teste dentro do Docker (perfil "test", não sobe no `up` normal).
+  # Uso: docker compose --profile test run --rm tests
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    profiles: ['test']
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # os testes de integração usam um banco separado no mesmo Postgres do compose
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/elite_dev_test
+      DIRECT_URL: postgresql://postgres:postgres@db:5432/elite_dev_test
+
 volumes:
   db_data:
