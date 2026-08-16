@@ -47,10 +47,13 @@ model User {
   name         String
   email        String   @unique
   passwordHash String
-  role         Role     @default(CLIENT)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  role        Role     @default(CLIENT)
+  organizerId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
+  organizer    User?         @relation("OrganizerGates", fields: [organizerId], references: [id])
+  gates        User[]        @relation("OrganizerGates")
   events       Event[]       @relation("OrganizerEvents")
   reservations Reservation[]
   orders       Order[]

@@ -155,6 +155,14 @@ export class PrismaEventsRepository extends EventsRepository {
     return { items: events.map((event) => this.toRecord(event)), total };
   }
 
+  async listPublishedByOrganizer(organizerId: string): Promise<EventRecord[]> {
+    const events = await this.prisma.event.findMany({
+      where: { organizerId, status: EventStatus.PUBLISHED },
+      orderBy: { startsAt: 'asc' },
+    });
+    return events.map((event) => this.toRecord(event));
+  }
+
   async listByOrganizer(input: ListOrganizerEventsInput): Promise<ListPublishedEventsResult> {
     const where: Prisma.EventWhereInput = { organizerId: input.organizerId };
     const [events, total] = await this.prisma.$transaction([

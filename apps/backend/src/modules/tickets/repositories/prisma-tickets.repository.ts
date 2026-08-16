@@ -14,6 +14,7 @@ type TicketWithDetails = Prisma.TicketGetPayload<{
         startsAt: true;
         venue: true;
         status: true;
+        organizerId: true;
       };
     };
     seat: {
@@ -107,6 +108,7 @@ export class PrismaTicketsRepository extends TicketsRepository {
         startsAt: true,
         venue: true,
         status: true,
+        organizerId: true,
       },
     },
     seat: {
@@ -136,6 +138,7 @@ export class PrismaTicketsRepository extends TicketsRepository {
         startsAt: ticket.event.startsAt,
         venue: ticket.event.venue,
         status: ticket.event.status as EventLifecycleStatus,
+        organizerId: ticket.event.organizerId,
       },
       seat: { label: ticket.seat.label },
     };

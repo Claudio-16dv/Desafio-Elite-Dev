@@ -1,12 +1,17 @@
 'use client';
 
-import type { EventSummary, ValidationResultResponse } from '@app/shared';
+import type {
+  EventSummary,
+  TicketInspectionResponse,
+  ValidateTicketRequest,
+  ValidationResultResponse,
+} from '@app/shared';
 import { ValidationOutcome } from '@app/shared';
 import { ScanLine } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Label } from '@/shared/ui';
-import { validateTicket } from '../actions';
+import { Button, Label } from '@/shared/ui';
+import { inspectTicket, validateTicket } from '../actions';
 import { ManualCodeForm } from './manual-code-form';
 import { QrScanner } from './qr-scanner';
 import { ValidationResult } from './validation-result';
@@ -18,13 +23,51 @@ const toastByOutcome: Record<ValidationOutcome, { message: string; success?: boo
   [ValidationOutcome.WRONG_EVENT]: { message: 'Este ingresso pertence a outro evento.' },
 };
 
+type TicketInput = Pick<ValidateTicketRequest, 'token' | 'code'>;
+type PendingStep = 'inspect' | 'validate' | null;
+
+function notifyOutcome(outcome: ValidationOutcome) {
+  const toastItem = toastByOutcome[outcome];
+  if (toastItem.success) {
+    toast.success(toastItem.message);
+  } else {
+    toast.error(toastItem.message);
+  }
+}
+
+function toValidationResult(inspection: TicketInspectionResponse): ValidationResultResponse {
+  return {
+    outcome: inspection.outcome,
+    ticketId: inspection.ticketId,
+    seatLabel: inspection.seatLabel,
+  };
+}
+
 export function GateValidationPanel({ events }: { events: EventSummary[] }) {
   const [eventId, setEventId] = useState(events[0]?.id ?? '');
+  const [inspection, setInspection] = useState<TicketInspectionResponse | null>(null);
+  const [pendingInput, setPendingInput] = useState<TicketInput | null>(null);
   const [result, setResult] = useState<ValidationResultResponse | null>(null);
   const [technicalError, setTechnicalError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
+  const [pendingStep, setPendingStep] = useState<PendingStep>(null);
 
-  async function submit(input: { token?: string; code?: string }) {
+  const inputDisabled = pendingStep !== null || inspection !== null;
+
+  function resetForNextRead() {
+    setInspection(null);
+    setPendingInput(null);
+    setResult(null);
+    setTechnicalError(null);
+    setPendingStep(null);
+  }
+
+  async function submit(input: TicketInput) {
+    if (pendingStep !== null) {
+      return;
+    }
+
+    setInspection(null);
+    setPendingInput(null);
     setResult(null);
     setTechnicalError(null);
 
@@ -35,22 +78,54 @@ export function GateValidationPanel({ events }: { events: EventSummary[] }) {
       return;
     }
 
-    setPending(true);
+    setPendingStep('inspect');
     try {
-      const validation = await validateTicket({ eventId, ...input });
-      setResult(validation);
-      const toastItem = toastByOutcome[validation.outcome];
-      if (toastItem.success) {
-        toast.success(toastItem.message);
+      const inspected = await inspectTicket({ eventId, ...input });
+      setInspection(inspected);
+      setPendingInput(input);
+
+      if (inspected.outcome === ValidationOutcome.VALID) {
+        toast.success('Ingresso identificado. Confirme a entrada.');
       } else {
-        toast.error(toastItem.message);
+        notifyOutcome(inspected.outcome);
       }
     } catch {
-      const message = 'Não foi possível validar este ingresso. Tente novamente.';
+      const message = 'Não foi possível ler este ingresso. Tente novamente.';
       setTechnicalError(message);
       toast.error(message);
     } finally {
-      setPending(false);
+      setPendingStep(null);
+    }
+  }
+
+  async function confirmEntry() {
+    if (
+      pendingStep !== null ||
+      !pendingInput ||
+      !inspection ||
+      inspection.outcome !== ValidationOutcome.VALID
+    ) {
+      return;
+    }
+
+    setTechnicalError(null);
+    setResult(null);
+    setPendingStep('validate');
+
+    try {
+      const validation = await validateTicket({ eventId, ...pendingInput });
+      setResult(validation);
+      setInspection(null);
+      setPendingInput(null);
+      notifyOutcome(validation.outcome);
+    } catch {
+      const message = 'Não foi possível confirmar a entrada. Tente novamente.';
+      setInspection(null);
+      setPendingInput(null);
+      setTechnicalError(message);
+      toast.error(message);
+    } finally {
+      setPendingStep(null);
     }
   }
 
@@ -74,10 +149,9 @@ export function GateValidationPanel({ events }: { events: EventSummary[] }) {
               value={eventId}
               onChange={(event) => {
                 setEventId(event.target.value);
-                setResult(null);
-                setTechnicalError(null);
+                resetForNextRead();
               }}
-              disabled={pending}
+              disabled={pendingStep !== null || inspection !== null}
               className="h-11 rounded-[--radius] border border-border bg-muted/40 px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             >
               {events.map((event) => (
@@ -88,30 +162,84 @@ export function GateValidationPanel({ events }: { events: EventSummary[] }) {
             </select>
           </div>
         </section>
-        <QrScanner onDetected={(token) => submit({ token })} disabled={pending} />
-        <ManualCodeForm onSubmitCode={(code) => submit({ code })} disabled={pending} />
+        <QrScanner onDetected={(token) => submit({ token })} disabled={inputDisabled} />
+        <ManualCodeForm onSubmitCode={(code) => submit({ code })} disabled={inputDisabled} />
       </div>
       <aside className="lg:sticky lg:top-24">
-        {pending ? (
+        {pendingStep === 'inspect' ? (
           <div
             role="status"
             aria-live="polite"
             className="rounded-[--radius] border border-primary/30 bg-primary/5 p-8 text-center text-sm leading-6 text-muted-foreground"
           >
-            Validando ingresso…
+            Lendo ingresso…
           </div>
-        ) : result ? (
-          <ValidationResult result={result} />
-        ) : technicalError ? (
+        ) : pendingStep === 'validate' ? (
           <div
-            role="alert"
-            className="rounded-[--radius] border border-danger/40 bg-danger/10 p-8 text-center text-sm leading-6 text-danger"
+            role="status"
+            aria-live="polite"
+            className="rounded-[--radius] border border-primary/30 bg-primary/5 p-8 text-center text-sm leading-6 text-muted-foreground"
           >
-            {technicalError}
+            Confirmando entrada…
+          </div>
+        ) : inspection ? (
+          <section className="space-y-4 rounded-[--radius] border border-border bg-card/60 p-6">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                Resultado da leitura
+              </p>
+              {inspection.eventTitle ? (
+                <h2 className="mt-3 font-display text-2xl font-bold">{inspection.eventTitle}</h2>
+              ) : null}
+              {inspection.seatLabel ? (
+                <p className="mt-2 text-sm font-semibold text-foreground">
+                  Assento {inspection.seatLabel}
+                </p>
+              ) : null}
+            </div>
+            {inspection.outcome === ValidationOutcome.VALID ? (
+              <div className="rounded-[--radius] border border-success/40 bg-success/10 p-4">
+                <p className="text-sm leading-6 text-success">
+                  Ingresso válido. Confirme a entrada para marcar o ingresso como utilizado.
+                </p>
+                <Button
+                  type="button"
+                  className="mt-4 w-full"
+                  onClick={confirmEntry}
+                  disabled={pendingStep !== null}
+                >
+                  Confirmar entrada
+                </Button>
+              </div>
+            ) : (
+              <ValidationResult result={toValidationResult(inspection)} />
+            )}
+            <Button type="button" variant="outline" className="w-full" onClick={resetForNextRead}>
+              Nova leitura
+            </Button>
+          </section>
+        ) : result ? (
+          <div className="space-y-3">
+            <ValidationResult result={result} />
+            <Button type="button" variant="outline" className="w-full" onClick={resetForNextRead}>
+              Nova leitura
+            </Button>
+          </div>
+        ) : technicalError ? (
+          <div className="space-y-3">
+            <div
+              role="alert"
+              className="rounded-[--radius] border border-danger/40 bg-danger/10 p-8 text-center text-sm leading-6 text-danger"
+            >
+              {technicalError}
+            </div>
+            <Button type="button" variant="outline" className="w-full" onClick={resetForNextRead}>
+              Nova leitura
+            </Button>
           </div>
         ) : (
           <div className="rounded-[--radius] border border-dashed border-border bg-card/40 p-8 text-center text-sm leading-6 text-muted-foreground">
-            O resultado da validação aparecerá aqui em destaque.
+            O resultado da leitura aparecerá aqui antes da confirmação.
           </div>
         )}
       </aside>

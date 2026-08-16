@@ -11,7 +11,7 @@ export class CreateGateUserUseCase {
     private readonly passwordHasher: PasswordHasher,
   ) {}
 
-  async execute(input: CreateGateUserRequest): Promise<AuthUser> {
+  async execute(organizerId: string, input: CreateGateUserRequest): Promise<AuthUser> {
     const existingUser = await this.users.findByEmail(input.email);
     if (existingUser) {
       throw new EmailAlreadyUsedError();
@@ -23,6 +23,7 @@ export class CreateGateUserUseCase {
       email: input.email,
       passwordHash,
       role: Role.GATE,
+      organizerId,
     });
 
     return this.toAuthUser(user);

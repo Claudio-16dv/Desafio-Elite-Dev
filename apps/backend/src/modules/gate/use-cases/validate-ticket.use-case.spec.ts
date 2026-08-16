@@ -5,6 +5,8 @@ import { ValidateTicketUseCase } from './validate-ticket.use-case';
 
 const EVENT_ID = '00000000-0000-4000-8000-000000000010';
 const TICKET_ID = '00000000-0000-4000-8000-000000000041';
+const ORGANIZER_ID = '00000000-0000-4000-8000-000000000001';
+const OTHER_ORGANIZER_ID = '00000000-0000-4000-8000-000000000099';
 
 function makeTicket(eventId: string = EVENT_ID): TicketRecord {
   return {
@@ -22,6 +24,7 @@ function makeTicket(eventId: string = EVENT_ID): TicketRecord {
       startsAt: new Date(),
       venue: 'Arena Central',
       status: 'PUBLISHED',
+      organizerId: ORGANIZER_ID,
     },
     seat: { label: 'A1' },
   };
@@ -52,7 +55,9 @@ describe('ValidateTicketUseCase', () => {
   it('retorna INVALID para token QR inválido', async () => {
     qrSigner.verify.mockReturnValue(null);
 
-    await expect(useCase.execute({ eventId: EVENT_ID, token: 'invalid-token' })).resolves.toEqual({
+    await expect(
+      useCase.execute({ eventId: EVENT_ID, token: 'invalid-token' }, ORGANIZER_ID),
+    ).resolves.toEqual({
       outcome: ValidationOutcome.INVALID,
     });
   });
@@ -61,9 +66,23 @@ describe('ValidateTicketUseCase', () => {
     qrSigner.verify.mockReturnValue(TICKET_ID);
     tickets.findById.mockResolvedValue(makeTicket('00000000-0000-4000-8000-000000000099'));
 
-    await expect(useCase.execute({ eventId: EVENT_ID, token: 'valid-token' })).resolves.toEqual({
+    await expect(
+      useCase.execute({ eventId: EVENT_ID, token: 'valid-token' }, ORGANIZER_ID),
+    ).resolves.toEqual({
       outcome: ValidationOutcome.WRONG_EVENT,
     });
+  });
+
+  it('retorna INVALID para ingresso de outro organizador', async () => {
+    qrSigner.verify.mockReturnValue(TICKET_ID);
+    tickets.findById.mockResolvedValue(makeTicket());
+
+    await expect(
+      useCase.execute({ eventId: EVENT_ID, token: 'valid-token' }, OTHER_ORGANIZER_ID),
+    ).resolves.toEqual({
+      outcome: ValidationOutcome.INVALID,
+    });
+    expect(tickets.markUsedIfValid).not.toHaveBeenCalled();
   });
 
   it('retorna VALID uma vez e ALREADY_USED na tentativa seguinte', async () => {
@@ -71,12 +90,16 @@ describe('ValidateTicketUseCase', () => {
     tickets.findById.mockResolvedValue(makeTicket());
     tickets.markUsedIfValid.mockResolvedValueOnce(1).mockResolvedValueOnce(0);
 
-    await expect(useCase.execute({ eventId: EVENT_ID, token: 'valid-token' })).resolves.toEqual({
+    await expect(
+      useCase.execute({ eventId: EVENT_ID, token: 'valid-token' }, ORGANIZER_ID),
+    ).resolves.toEqual({
       outcome: ValidationOutcome.VALID,
       ticketId: TICKET_ID,
       seatLabel: 'A1',
     });
-    await expect(useCase.execute({ eventId: EVENT_ID, token: 'valid-token' })).resolves.toEqual({
+    await expect(
+      useCase.execute({ eventId: EVENT_ID, token: 'valid-token' }, ORGANIZER_ID),
+    ).resolves.toEqual({
       outcome: ValidationOutcome.ALREADY_USED,
     });
   });

@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import {
+  TicketInspectionResponse,
   TicketStatus,
   ValidateTicketRequest,
   ValidationOutcome,
-  ValidationResultResponse,
 } from '@app/shared';
 import { QrSigner } from '../../tickets/providers/qr-signer';
 import { TicketsRepository } from '../../tickets/repositories/tickets.repository';
 import { resolveTicketId } from './resolve-ticket-id';
 
 @Injectable()
-export class ValidateTicketUseCase {
+export class InspectTicketUseCase {
   constructor(
     private readonly tickets: TicketsRepository,
     private readonly qrSigner: QrSigner,
@@ -19,7 +19,7 @@ export class ValidateTicketUseCase {
   async execute(
     input: ValidateTicketRequest,
     gateOrganizerId: string | null,
-  ): Promise<ValidationResultResponse> {
+  ): Promise<TicketInspectionResponse> {
     const ticketId = await resolveTicketId(input, this.tickets, this.qrSigner);
     if (!ticketId) {
       return { outcome: ValidationOutcome.INVALID };
@@ -32,27 +32,21 @@ export class ValidateTicketUseCase {
     if (ticket.eventId !== input.eventId) {
       return { outcome: ValidationOutcome.WRONG_EVENT };
     }
+    if (ticket.status === TicketStatus.USED) {
+      return {
+        outcome: ValidationOutcome.ALREADY_USED,
+        eventTitle: ticket.event.title,
+        seatLabel: ticket.seat.label,
+      };
+    }
     if (ticket.status === TicketStatus.EVENT_CANCELLED || ticket.event.status !== 'PUBLISHED') {
       return { outcome: ValidationOutcome.INVALID };
-    }
-
-    const updated = await this.tickets.markUsedIfValid(ticketId, new Date());
-    if (!updated) {
-      const current = await this.tickets.findById(ticketId);
-      if (
-        !current ||
-        current.event.organizerId !== gateOrganizerId ||
-        current.status === TicketStatus.EVENT_CANCELLED ||
-        current.event.status !== 'PUBLISHED'
-      ) {
-        return { outcome: ValidationOutcome.INVALID };
-      }
-      return { outcome: ValidationOutcome.ALREADY_USED };
     }
 
     return {
       outcome: ValidationOutcome.VALID,
       ticketId: ticket.id,
+      eventTitle: ticket.event.title,
       seatLabel: ticket.seat.label,
     };
   }

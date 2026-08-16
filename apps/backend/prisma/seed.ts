@@ -344,13 +344,19 @@ async function main(): Promise<void> {
     }),
     prisma.user.upsert({
       where: { email: 'portaria@elite.dev' },
-      update: { name: 'Portaria Elite', passwordHash, role: Role.GATE },
+      update: {
+        name: 'Portaria Elite',
+        passwordHash,
+        role: Role.GATE,
+        organizerId: IDS.organizer,
+      },
       create: {
         id: IDS.gate,
         name: 'Portaria Elite',
         email: 'portaria@elite.dev',
         passwordHash,
         role: Role.GATE,
+        organizerId: IDS.organizer,
       },
     }),
   ]);

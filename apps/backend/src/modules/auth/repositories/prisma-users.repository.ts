@@ -29,6 +29,7 @@ export class PrismaUsersRepository extends UsersRepository {
           email: input.email,
           passwordHash: input.passwordHash,
           role: input.role as PrismaRole,
+          organizerId: input.organizerId ?? null,
         },
       });
       return this.toRecord(user);
@@ -58,6 +59,7 @@ export class PrismaUsersRepository extends UsersRepository {
       email: user.email,
       passwordHash: user.passwordHash,
       role: user.role as Role,
+      organizerId: user.organizerId,
     };
   }
 }

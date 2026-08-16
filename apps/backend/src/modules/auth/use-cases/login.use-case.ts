@@ -29,7 +29,11 @@ export class LoginUseCase {
 
   private async toLoginResponse(user: UserRecord): Promise<LoginResponse> {
     return {
-      accessToken: await this.tokens.sign({ sub: user.id, role: user.role }),
+      accessToken: await this.tokens.sign({
+        sub: user.id,
+        role: user.role,
+        organizerId: user.organizerId ?? undefined,
+      }),
       user: this.toAuthUser(user),
     };
   }

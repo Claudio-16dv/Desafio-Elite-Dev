@@ -7,6 +7,7 @@ import { TokenPayload } from '../providers/token-provider';
 export interface AuthenticatedUser {
   id: string;
   role: Role;
+  organizerId?: string | null;
 }
 
 @Injectable()
@@ -20,6 +21,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   validate(payload: TokenPayload): AuthenticatedUser {
-    return { id: payload.sub, role: payload.role };
+    return {
+      id: payload.sub,
+      role: payload.role,
+      organizerId: payload.organizerId ?? null,
+    };
   }
 }

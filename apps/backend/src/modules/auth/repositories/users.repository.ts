@@ -6,6 +6,7 @@ export interface UserRecord {
   email: string;
   passwordHash: string;
   role: Role;
+  organizerId: string | null;
 }
 
 export interface CreateUserInput {
@@ -13,6 +14,7 @@ export interface CreateUserInput {
   email: string;
   passwordHash: string;
   role: Role;
+  organizerId?: string;
 }
 
 export interface UpdateUserInput {

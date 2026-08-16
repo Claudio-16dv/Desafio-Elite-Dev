@@ -42,8 +42,11 @@ export class AuthController {
   @Post('gates')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ORGANIZER)
-  registerGate(@Body() dto: CreateGateUserDto): Promise<AuthUser> {
-    return this.createGateUser.execute(dto);
+  registerGate(
+    @CurrentUser() organizer: AuthenticatedUser,
+    @Body() dto: CreateGateUserDto,
+  ): Promise<AuthUser> {
+    return this.createGateUser.execute(organizer.id, dto);
   }
 
   @Post('login')

@@ -63,6 +63,16 @@ export function QrScanner({
     }
   }
 
+  useEffect(() => {
+    if (!disabled) {
+      return;
+    }
+
+    controlsRef.current?.stop();
+    controlsRef.current = null;
+    setScanning(false);
+  }, [disabled]);
+
   useEffect(() => () => controlsRef.current?.stop(), []);
 
   return (

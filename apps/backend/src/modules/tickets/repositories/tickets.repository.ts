@@ -5,6 +5,7 @@ export interface TicketEventRecord {
   startsAt: Date;
   venue: string;
   status: EventLifecycleStatus;
+  organizerId: string;
 }
 
 export interface TicketSeatRecord {

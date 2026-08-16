@@ -77,6 +77,7 @@ export abstract class EventsRepository {
   abstract cancel(id: string): Promise<EventRecord>;
   abstract findById(id: string): Promise<EventRecord | null>;
   abstract listPublished(input: ListPublishedEventsInput): Promise<ListPublishedEventsResult>;
+  abstract listPublishedByOrganizer(organizerId: string): Promise<EventRecord[]>;
   abstract listByOrganizer(input: ListOrganizerEventsInput): Promise<ListPublishedEventsResult>;
   abstract findSeats(eventId: string, now: Date): Promise<SeatRecord[]>;
 }

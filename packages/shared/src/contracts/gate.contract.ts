@@ -11,3 +11,10 @@ export interface ValidationResultResponse {
   ticketId?: string;
   seatLabel?: string;
 }
+
+export interface TicketInspectionResponse {
+  outcome: ValidationOutcome;
+  ticketId?: string;
+  eventTitle?: string;
+  seatLabel?: string;
+}
