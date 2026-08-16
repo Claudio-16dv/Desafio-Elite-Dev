@@ -6,7 +6,7 @@ import { AppModule } from './app.module';
 import { DomainExceptionFilter } from './common/exceptions/domain-exception.filter';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   const config = app.get(ConfigService);
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));

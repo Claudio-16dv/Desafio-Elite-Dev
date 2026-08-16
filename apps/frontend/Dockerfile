@@ -14,6 +14,9 @@ COPY tsconfig.base.json ./
 COPY packages/shared packages/shared
 COPY apps/frontend apps/frontend
 
+ARG NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+ENV NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+
 RUN npm run build -w @app/shared \
   && npm run build -w @app/frontend
 

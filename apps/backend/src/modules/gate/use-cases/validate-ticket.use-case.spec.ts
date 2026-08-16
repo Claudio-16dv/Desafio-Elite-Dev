@@ -17,7 +17,12 @@ function makeTicket(eventId: string = EVENT_ID): TicketRecord {
     code: 'SEEDAATKTA',
     shareToken: null,
     usedAt: null,
-    event: { title: 'Show de Exemplo', startsAt: new Date(), venue: 'Arena Central' },
+    event: {
+      title: 'Show de Exemplo',
+      startsAt: new Date(),
+      venue: 'Arena Central',
+      status: 'PUBLISHED',
+    },
     seat: { label: 'A1' },
   };
 }

@@ -1,12 +1,19 @@
-export interface PaymentInput {
+export interface CreatePaymentInput {
   amountCents: number;
-  outcome: 'approve' | 'refuse';
+  orderId: string;
 }
 
 export interface PaymentResult {
-  approved: boolean;
+  paymentIntentId: string;
+  clientSecret: string;
 }
 
+export type PaymentWebhookEvent =
+  | { type: 'succeeded'; paymentIntentId: string }
+  | { type: 'canceled'; paymentIntentId: string }
+  | { type: 'ignored' };
+
 export abstract class PaymentGateway {
-  abstract charge(input: PaymentInput): Promise<PaymentResult>;
+  abstract createPayment(input: CreatePaymentInput): Promise<PaymentResult>;
+  abstract parseWebhookEvent(rawBody: Buffer, signature: string): PaymentWebhookEvent;
 }

@@ -2,25 +2,28 @@ import { Module } from '@nestjs/common';
 import { ReservationsModule } from '../reservations/reservations.module';
 import { TicketsModule } from '../tickets/tickets.module';
 import { OrdersController } from './orders.controller';
-import { FakePaymentGateway } from './providers/fake-payment.gateway';
+import { StripeWebhookController } from './stripe-webhook.controller';
 import { PaymentGateway } from './providers/payment.gateway';
+import { StripePaymentGateway } from './providers/stripe-payment.gateway';
 import { PrismaOrdersRepository } from './repositories/prisma-orders.repository';
 import { OrdersRepository } from './repositories/orders.repository';
 import { CancelOrderUseCase } from './use-cases/cancel-order.use-case';
 import { CheckoutUseCase } from './use-cases/checkout.use-case';
 import { GetOrderUseCase } from './use-cases/get-order.use-case';
+import { HandleStripeWebhookUseCase } from './use-cases/handle-stripe-webhook.use-case';
 import { ListMyOrdersUseCase } from './use-cases/list-my-orders.use-case';
 
 @Module({
   imports: [ReservationsModule, TicketsModule],
-  controllers: [OrdersController],
+  controllers: [OrdersController, StripeWebhookController],
   providers: [
     CheckoutUseCase,
     GetOrderUseCase,
     CancelOrderUseCase,
+    HandleStripeWebhookUseCase,
     ListMyOrdersUseCase,
     { provide: OrdersRepository, useClass: PrismaOrdersRepository },
-    { provide: PaymentGateway, useClass: FakePaymentGateway },
+    { provide: PaymentGateway, useClass: StripePaymentGateway },
   ],
 })
 export class OrdersModule {}

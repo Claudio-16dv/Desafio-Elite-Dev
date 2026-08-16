@@ -3,7 +3,11 @@ import { TicketResponse } from './ticket.contract';
 
 export interface CheckoutRequest {
   reservationId: string;
-  simulateOutcome?: 'approve' | 'refuse';
+}
+
+export interface CheckoutResponse {
+  orderId: string;
+  clientSecret: string;
 }
 
 export interface OrderResponse {

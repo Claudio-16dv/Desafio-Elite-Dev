@@ -29,6 +29,7 @@ enum ReservationStatus {
 
 enum OrderStatus {
   PENDING
+  EXPIRED
   PAID
   REFUND_REQUESTED
   REFUSED
@@ -129,8 +130,9 @@ model Order {
   id            String      @id @default(uuid())
   eventId       String
   userId        String
-  reservationId String      @unique
-  status        OrderStatus @default(PENDING)
+  reservationId          String      @unique
+  stripePaymentIntentId  String?     @unique
+  status                 OrderStatus @default(PENDING)
   totalCents    Int
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt

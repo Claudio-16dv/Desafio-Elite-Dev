@@ -12,7 +12,7 @@ export class HoldSeatsUseCase {
   ) {}
 
   async execute(userId: string, input: CreateReservationRequest): Promise<ReservationResponse> {
-    const ttlMinutes = this.config.get<number>('app.reservationTtlMinutes') ?? 10;
+    const ttlMinutes = this.config.get<number>('app.reservationTtlMinutes') ?? 5;
     const reservation = await this.reservations.holdSeats({
       eventId: input.eventId,
       userId,

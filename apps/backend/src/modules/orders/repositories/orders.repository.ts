@@ -24,21 +24,7 @@ export interface OrderRecord {
   tickets: OrderTicketRecord[];
 }
 
-export interface TicketToCreate {
-  seatId: string;
-  code: string;
-}
-
-export interface CreatePaidOrderInput {
-  reservationId: string;
-  eventId: string;
-  userId: string;
-  totalCents: number;
-  tickets: TicketToCreate[];
-  now: Date;
-}
-
-export interface CreateRefusedOrderInput {
+export interface CreatePendingOrderInput {
   reservationId: string;
   eventId: string;
   userId: string;
@@ -47,8 +33,13 @@ export interface CreateRefusedOrderInput {
 }
 
 export abstract class OrdersRepository {
-  abstract createPaidOrderWithTickets(input: CreatePaidOrderInput): Promise<OrderRecord>;
-  abstract createRefusedOrderAndRelease(input: CreateRefusedOrderInput): Promise<OrderRecord>;
+  abstract createPendingOrder(input: CreatePendingOrderInput): Promise<OrderRecord>;
+  abstract deletePendingOrder(id: string): Promise<void>;
+  abstract attachPaymentIntent(orderId: string, paymentIntentId: string): Promise<OrderRecord>;
+  abstract findByPaymentIntentId(paymentIntentId: string): Promise<OrderRecord | null>;
+  abstract confirmPaidAndIssueTickets(paymentIntentId: string, now: Date): Promise<OrderRecord>;
+  abstract expireOrder(id: string): Promise<OrderRecord>;
+  abstract releasePendingByReservation(reservationId: string): Promise<void>;
   abstract findById(id: string): Promise<OrderRecord | null>;
   abstract findByUserId(userId: string): Promise<OrderRecord[]>;
   abstract cancel(id: string): Promise<OrderRecord>;

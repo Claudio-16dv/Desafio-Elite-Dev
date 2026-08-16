@@ -1,28 +1,91 @@
 'use client';
 
-import type { EventDetail, OrderResponse, ReservationResponse, SeatResponse } from '@app/shared';
+import type {
+  CheckoutResponse,
+  EventDetail,
+  OrderResponse,
+  ReservationResponse,
+  SeatResponse,
+} from '@app/shared';
 import { OrderStatus } from '@app/shared';
-import { CheckCircle2, Clock3, Copy, CreditCard, ShieldCheck, TicketX } from 'lucide-react';
+import { CheckCircle2, Clock3, CreditCard, LoaderCircle, TicketX } from 'lucide-react';
 import Link from 'next/link';
-import { QRCodeCanvas } from 'qrcode.react';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/shared/ui';
-import { checkoutOrder, holdSeats, releaseReservation } from '../actions';
+import { Button, Card, CardContent, CardHeader, CardTitle } from '@/shared/ui';
+import { checkOrderStatus, checkoutOrder, holdSeats, releaseReservation } from '../actions';
 import { MAX_SEATS_PER_RESERVATION } from '../constants';
+import { PaymentElementForm } from './payment-element-form';
 import { SeatMap } from './seat-map';
 
 const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const dateTime = new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short' });
+const POLL_INTERVAL_MS = 1500;
+const MAX_POLL_ATTEMPTS = 40;
 
-function buildPixPayload(reservationId: string, totalCents: number) {
-  return 'PIX-SIM|res:' + reservationId + '|amount:' + totalCents;
+function wait(milliseconds: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
+
+function formatRemaining(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
 export function CheckoutFlow({ event, seats }: { event: EventDetail; seats: SeatResponse[] }) {
+  const router = useRouter();
+  const mountedRef = useRef(true);
   const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
   const [reservation, setReservation] = useState<ReservationResponse | null>(null);
+  const [payment, setPayment] = useState<CheckoutResponse | null>(null);
   const [order, setOrder] = useState<OrderResponse | null>(null);
-  const [pending, setPending] = useState(false);
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const [creatingReservation, setCreatingReservation] = useState(false);
+  const [creatingPayment, setCreatingPayment] = useState(false);
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
+  const [polling, setPolling] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!reservation) {
+      setRemainingSeconds(0);
+      return;
+    }
+
+    const updateRemaining = () => {
+      const expiresAt = new Date(reservation.expiresAt).getTime();
+      setRemainingSeconds(Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000)));
+    };
+
+    updateRemaining();
+    const interval = window.setInterval(updateRemaining, 1000);
+    return () => window.clearInterval(interval);
+  }, [reservation]);
+
+  useEffect(() => {
+    if (!reservation || polling || new Date(reservation.expiresAt).getTime() > Date.now()) {
+      return;
+    }
+
+    setReservation(null);
+    setPayment(null);
+    setSelectedSeatIds([]);
+    toast.error('A reserva expirou. Escolha os assentos novamente.');
+    router.refresh();
+  }, [polling, reservation, router, remainingSeconds]);
+
+  function clearReservationState() {
+    setReservation(null);
+    setPayment(null);
+    setSelectedSeatIds([]);
+  }
 
   function toggleSeat(seatId: string) {
     if (selectedSeatIds.includes(seatId)) {
@@ -46,7 +109,7 @@ export function CheckoutFlow({ event, seats }: { event: EventDetail; seats: Seat
       return;
     }
 
-    setPending(true);
+    setCreatingReservation(true);
     try {
       const createdReservation = await holdSeats({ eventId: event.id, seatIds: selectedSeatIds });
       setReservation(createdReservation);
@@ -58,55 +121,104 @@ export function CheckoutFlow({ event, seats }: { event: EventDetail; seats: Seat
         'Não foi possível reservar estes assentos. Eles podem ter acabado de ser ocupados.',
       );
     } finally {
-      setPending(false);
+      setCreatingReservation(false);
     }
   }
 
   async function cancelReservation() {
-    if (!reservation) {
+    if (!reservation || payment) {
       return;
     }
 
-    setPending(true);
+    setCreatingReservation(true);
     try {
       await releaseReservation({ reservationId: reservation.id });
-      setReservation(null);
-      setSelectedSeatIds([]);
+      clearReservationState();
+      router.refresh();
       toast.success('Reserva liberada. Você pode escolher outros lugares.');
     } catch {
       toast.error('Não foi possível liberar a reserva. Tente novamente.');
     } finally {
-      setPending(false);
+      setCreatingReservation(false);
     }
   }
 
-  async function pay(simulateOutcome: 'approve' | 'refuse') {
-    if (!reservation) {
+  async function createPaymentIntent() {
+    if (!reservation || payment) {
       return;
     }
 
-    setPending(true);
+    setCreatingPayment(true);
     try {
-      const createdOrder = await checkoutOrder({ reservationId: reservation.id, simulateOutcome });
-      setOrder(createdOrder);
-      if (createdOrder.status === OrderStatus.PAID) {
-        toast.success('Pagamento aprovado! Seus ingressos já estão disponíveis.');
-      } else {
-        toast.error('Pagamento recusado. A reserva foi liberada para outros clientes.');
-      }
+      const createdPayment = await checkoutOrder({ reservationId: reservation.id });
+      setPayment(createdPayment);
+      toast.success('Pagamento pronto. Escolha cartão ou Pix para continuar.');
     } catch {
-      toast.error('Não foi possível processar o pagamento. Verifique a reserva e tente novamente.');
+      clearReservationState();
+      router.refresh();
+      toast.error('Não foi possível iniciar o pagamento. A reserva foi liberada.');
     } finally {
-      setPending(false);
+      setCreatingPayment(false);
     }
   }
 
+  const pollOrder = useCallback(
+    async (orderId: string) => {
+      if (!mountedRef.current) {
+        return;
+      }
+
+      setPolling(true);
+      try {
+        for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt += 1) {
+          const currentOrder = await checkOrderStatus({ orderId });
+          if (!mountedRef.current) {
+            return;
+          }
+
+          if (currentOrder.status === OrderStatus.PAID) {
+            setOrder(currentOrder);
+            clearReservationState();
+            toast.success('Pagamento aprovado! Seus ingressos já estão disponíveis.');
+            return;
+          }
+
+          if (
+            currentOrder.status === OrderStatus.EXPIRED ||
+            currentOrder.status === OrderStatus.CANCELLED ||
+            currentOrder.status === OrderStatus.REFUSED
+          ) {
+            setOrder(currentOrder);
+            clearReservationState();
+            router.refresh();
+            toast.error('O pagamento não foi concluído dentro do prazo da reserva.');
+            return;
+          }
+
+          await wait(POLL_INTERVAL_MS);
+        }
+
+        toast.error('O pagamento ainda está sendo processado. Atualize os pedidos em instantes.');
+      } catch {
+        if (mountedRef.current) {
+          toast.error('Não foi possível consultar o status do pagamento. Tente novamente.');
+        }
+      } finally {
+        if (mountedRef.current) {
+          setPolling(false);
+        }
+      }
+    },
+    [router],
+  );
+
   const selectedSeats = seats.filter((seat) => selectedSeatIds.includes(seat.id));
   const total = selectedSeats.length * event.priceCents;
-  const pixPayload = reservation ? buildPixPayload(reservation.id, total) : '';
+  const busy = creatingReservation || creatingPayment || confirmingPayment || polling;
 
   if (order) {
     const paid = order.status === OrderStatus.PAID;
+    const expired = order.status === OrderStatus.EXPIRED;
     return (
       <Card className="mx-auto max-w-2xl">
         <CardHeader>
@@ -115,11 +227,19 @@ export function CheckoutFlow({ event, seats }: { event: EventDetail; seats: Seat
           >
             {paid ? <CheckCircle2 className="size-7" /> : <TicketX className="size-7" />}
           </div>
-          <CardTitle>{paid ? 'Pagamento confirmado' : 'Pagamento recusado'}</CardTitle>
+          <CardTitle>
+            {paid
+              ? 'Pagamento confirmado'
+              : expired
+                ? 'Reserva expirada'
+                : 'Pagamento não concluído'}
+          </CardTitle>
           <p className="text-sm leading-6 text-muted-foreground">
             {paid
               ? `${order.tickets.length} ingresso${order.tickets.length === 1 ? '' : 's'} emitido${order.tickets.length === 1 ? '' : 's'} para ${event.title}.`
-              : 'Os assentos foram liberados. Você pode tentar novamente com outra forma de pagamento simulada.'}
+              : expired
+                ? 'O prazo da reserva terminou e os assentos foram liberados.'
+                : 'O pedido não foi concluído. Você pode escolher outros assentos.'}
           </p>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
@@ -131,8 +251,8 @@ export function CheckoutFlow({ event, seats }: { event: EventDetail; seats: Seat
             <Button
               onClick={() => {
                 setOrder(null);
-                setReservation(null);
-                setSelectedSeatIds([]);
+                clearReservationState();
+                router.refresh();
               }}
             >
               Escolher outros assentos
@@ -147,12 +267,12 @@ export function CheckoutFlow({ event, seats }: { event: EventDetail; seats: Seat
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
       <SeatMap
         seats={seats}
         selectedIds={selectedSeatIds}
         onToggle={toggleSeat}
-        disabled={Boolean(reservation) || pending}
+        disabled={Boolean(reservation) || busy}
       />
       <Card className="lg:sticky lg:top-24">
         <CardHeader>
@@ -175,87 +295,87 @@ export function CheckoutFlow({ event, seats }: { event: EventDetail; seats: Seat
             </div>
           </div>
           {reservation ? (
-            <>
-              <div className="rounded-[--radius] border border-warning/30 bg-warning/10 p-4 text-sm">
-                <p className="flex items-center gap-2 font-semibold text-warning">
-                  <Clock3 className="size-4" /> Reserva temporária ativa
-                </p>
-                <p className="mt-2 text-muted-foreground">
-                  Assentos: {reservation.seatLabels.join(', ')}. Conclua o pagamento antes de{' '}
-                  {new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short' }).format(
-                    new Date(reservation.expiresAt),
-                  )}
-                  .
-                </p>
-              </div>
-              <div className="rounded-[--radius] border border-primary/30 bg-primary/5 p-4">
-                <p className="flex items-center gap-2 text-sm font-semibold">
-                  <ShieldCheck className="size-4 text-primary" /> Pix simulado
-                </p>
-                <div className="mx-auto mt-4 w-fit rounded-lg bg-white p-2">
-                  <QRCodeCanvas value={pixPayload} size={156} includeMargin />
-                </div>
-                <p className="mt-3 text-center text-xs leading-5 text-muted-foreground">
-                  Pagamento simulado — nenhuma cobrança real será realizada.
-                </p>
-                <div className="mt-3 flex gap-2">
-                  <Input
-                    aria-label="Código Pix copia e cola simulado"
-                    readOnly
-                    value={pixPayload}
-                    className="font-mono text-xs"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    aria-label="Copiar código Pix"
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(pixPayload);
-                        toast.success('Código Pix simulado copiado.');
-                      } catch {
-                        toast.error('Não foi possível copiar o código.');
-                      }
-                    }}
-                  >
-                    <Copy className="size-4" />
-                  </Button>
-                </div>
-              </div>
-            </>
+            <div className="rounded-[--radius] border border-warning/30 bg-warning/10 p-4 text-sm">
+              <p className="flex items-center justify-between gap-2 font-semibold text-warning">
+                <span className="flex items-center gap-2">
+                  <Clock3 aria-hidden="true" className="size-4" /> Reserva temporária ativa
+                </span>
+                <span aria-live="polite" aria-label="Tempo restante da reserva">
+                  {formatRemaining(remainingSeconds)}
+                </span>
+              </p>
+              <p className="mt-2 text-muted-foreground">
+                Assentos: {reservation.seatLabels.join(', ')}. Pague até{' '}
+                {dateTime.format(new Date(reservation.expiresAt))}.
+              </p>
+            </div>
+          ) : null}
+          {payment ? (
+            <div className="rounded-[--radius] border border-primary/30 bg-primary/5 p-4">
+              <p className="mb-3 flex items-center gap-2 text-sm font-semibold">
+                <CreditCard aria-hidden="true" className="size-4 text-primary" />
+                Pagamento seguro
+              </p>
+              <PaymentElementForm
+                clientSecret={payment.clientSecret}
+                disabled={polling}
+                onConfirmed={() => void pollOrder(payment.orderId)}
+                onError={(message) => toast.error(message)}
+                onSubmittingChange={setConfirmingPayment}
+              />
+            </div>
+          ) : null}
+          {polling ? (
+            <div
+              aria-live="polite"
+              className="flex items-center gap-3 rounded-[--radius] border border-primary/30 bg-primary/5 p-4 text-sm font-medium"
+              role="status"
+            >
+              <LoaderCircle aria-hidden="true" className="size-5 motion-safe:animate-spin" />
+              Processando pagamento…
+            </div>
           ) : null}
           {!reservation ? (
             <Button
               className="w-full"
               onClick={createReservation}
-              disabled={pending || !selectedSeatIds.length}
+              disabled={busy || !selectedSeatIds.length}
+              aria-busy={creatingReservation}
             >
-              Reservar assentos
+              {creatingReservation ? (
+                <span
+                  aria-hidden="true"
+                  className="size-4 rounded-full border-2 border-current border-t-transparent motion-safe:animate-spin"
+                />
+              ) : null}
+              {creatingReservation ? 'Reservando…' : 'Reservar assentos'}
             </Button>
-          ) : (
+          ) : !payment ? (
             <div className="grid gap-3">
-              <Button className="w-full" onClick={() => pay('approve')} disabled={pending}>
-                <CreditCard className="size-4" /> Já paguei / Confirmar
-              </Button>
               <Button
                 className="w-full"
-                variant="outline"
-                onClick={() => pay('refuse')}
-                disabled={pending}
+                onClick={createPaymentIntent}
+                disabled={busy}
+                aria-busy={creatingPayment}
               >
-                Simular recusa
+                {creatingPayment ? (
+                  <span
+                    aria-hidden="true"
+                    className="size-4 rounded-full border-2 border-current border-t-transparent motion-safe:animate-spin"
+                  />
+                ) : null}
+                {creatingPayment ? 'Preparando pagamento…' : 'Pagar'}
               </Button>
               <Button
                 className="w-full"
                 variant="ghost"
                 onClick={cancelReservation}
-                disabled={pending}
+                disabled={busy}
               >
                 Liberar reserva
               </Button>
             </div>
-          )}
+          ) : null}
         </CardContent>
       </Card>
     </div>

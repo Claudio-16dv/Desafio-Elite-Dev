@@ -14,7 +14,10 @@ export const holdSeatsSchema = z.object({
 
 export const checkoutSchema = z.object({
   reservationId: z.string().uuid('Reserva inválida.'),
-  simulateOutcome: z.enum(['approve', 'refuse']),
+});
+
+export const orderStatusSchema = z.object({
+  orderId: z.string().uuid('Pedido inválido.'),
 });
 
 export const releaseReservationSchema = z.object({

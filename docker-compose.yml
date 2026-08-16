@@ -35,6 +35,9 @@ services:
       TMDB_API_KEY: ${TMDB_API_KEY:-}
       TMDB_BASE_URL: https://api.themoviedb.org/3
       CORS_ORIGIN: http://localhost:3000
+      RESERVATION_TTL_MINUTES: ${RESERVATION_TTL_MINUTES:-5}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:?STRIPE_SECRET_KEY is required}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:?STRIPE_WEBHOOK_SECRET is required}
     command: >
       sh -c "npx prisma migrate deploy --schema=apps/backend/prisma/schema.prisma &&
              npm run seed -w @app/backend &&
@@ -46,6 +49,8 @@ services:
     build:
       context: .
       dockerfile: apps/frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:?NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is required}
     restart: unless-stopped
     depends_on:
       - backend

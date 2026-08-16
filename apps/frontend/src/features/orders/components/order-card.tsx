@@ -19,6 +19,7 @@ const statusPresentation = {
   [OrderStatus.PAID]: { label: 'Pago', variant: 'success' as const },
   [OrderStatus.REFUSED]: { label: 'Recusado', variant: 'danger' as const },
   [OrderStatus.CANCELLED]: { label: 'Cancelado', variant: 'muted' as const },
+  [OrderStatus.EXPIRED]: { label: 'Expirado', variant: 'muted' as const },
   [OrderStatus.REFUND_REQUESTED]: { label: 'Estorno solicitado', variant: 'warning' as const },
 };
 

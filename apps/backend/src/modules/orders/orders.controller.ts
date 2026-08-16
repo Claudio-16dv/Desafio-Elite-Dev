@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { OrderListItem, OrderResponse, Role } from '@app/shared';
+import { CheckoutResponse, OrderListItem, OrderResponse, Role } from '@app/shared';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -26,7 +26,7 @@ export class OrdersController {
   checkoutOrder(
     @Body() dto: CheckoutDto,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<OrderResponse> {
+  ): Promise<CheckoutResponse> {
     return this.checkout.execute(user.id, dto);
   }
 

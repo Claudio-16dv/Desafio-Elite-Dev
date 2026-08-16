@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { appConfig } from './config/app.config';
+import { stripeConfig } from './config/stripe.config';
 import { validateEnv } from './config/env.validation';
 import { PrismaModule } from './database/prisma/prisma.module';
 import { HealthModule } from './health/health.module';
@@ -15,7 +16,7 @@ import { ReservationsModule } from './modules/reservations/reservations.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig],
+      load: [appConfig, stripeConfig],
       validate: validateEnv,
     }),
     PrismaModule,
