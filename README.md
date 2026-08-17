@@ -8,9 +8,10 @@ organizador que o cadastrou.
 
 > **Demo online (é onde o pagamento funciona):** https://desafio-elite-dev-tau.vercel.app
 >
-> **Observação:** o back-end está no plano gratuito do Render e **hiberna** após um tempo
-> ocioso. Por isso a **primeira requisição pode levar ~30–50s** (cold start) — depois que ele
-> "acorda", a navegação fica normal.
+> **Observação:** ao abrir a aplicação servida pela primeira vez, a **primeira carregada pode
+> demorar ~30–50s**. O back-end está no plano gratuito do Render e **hiberna** após um tempo
+> ocioso, então a primeira requisição precisa "acordar" o servidor (cold start). Depois disso,
+> a navegação fica normal.
 
 O domínio central é: `User` (3 papéis) · `Event` + `Seat` · `Reservation` (+ `ReservationSeat`)
 · `Order` · `Ticket`. Preço sempre em **centavos**; estados sempre em **enum**.
