@@ -321,6 +321,10 @@ tinha decidido e especificado, escrever o código e os testes seguindo os padrõ
 acelerar as partes repetitivas e servir de par na revisão. A direção técnica, as decisões de
 design e a conferência do que entrou no projeto foram minhas.
 
+Obs. sobre o ambiente servido: a demo está no ar (front na Vercel, back no Render). Como o
+back usa o plano gratuito e **hiberna** quando fica ocioso, a **primeira carregada ao entrar
+na aplicação pode demorar ~30–50s** (cold start); depois disso, a navegação fica normal.
+
 ---
 
 ## Documentação interna
