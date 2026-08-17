@@ -305,17 +305,25 @@ ver o QR e o compartilhamento imediatamente, sem comprar.
 As **decisões de arquitetura e de produto foram minhas**: como o projeto seria organizado, o
 back-end em camadas (controller → use-case → entidade → repositório/porta), o padrão de
 páginas finas no front com a regra de negócio no servidor, as convenções de código, o recorte
-de escopo e os tradeoffs de cada escolha. Essas decisões ficaram registradas nas convenções do projeto
-(`.kiro/steering/`) e nos ADRs (`docs/adr/`).
+de escopo e os tradeoffs de cada escolha. As decisões de arquitetura estão registradas nos
+ADRs (`docs/adr/`).
 
-Usei a IA (Kiro) principalmente como **ferramenta de codificação**: implementar o que eu já
-tinha decidido, escrever código e testes seguindo os padrões que defini, acelerar as partes
-repetitivas e servir de par na hora de revisar. A direção técnica, as decisões de design e a
-conferência do que entrou no projeto foram minhas — a IA executou dentro desse desenho.
+O trabalho foi conduzido por **specs**: para cada definição — uma funcionalidade nova ou a
+correção/ajuste de algo combinado ao longo do projeto — eu escrevia uma spec detalhada (o que
+fazer, os padrões a seguir e os limites) e a IA implementava a partir dela; depois eu revisava
+o que voltou. Cada spec cobriu uma parte do sistema (preparação de ambiente, back-end,
+front-end, pagamento, portaria e testes), e as convenções gerais ficaram em documentos de
+steering. Esses documentos de trabalho foram mantidos localmente (não versionados).
+
+Ou seja, usei a IA principalmente como **ferramenta de execução**: implementar o que eu já
+tinha decidido e especificado, escrever o código e os testes seguindo os padrões definidos,
+acelerar as partes repetitivas e servir de par na revisão. A direção técnica, as decisões de
+design e a conferência do que entrou no projeto foram minhas.
 
 ---
 
 ## Documentação interna
 
-- Decisões de arquitetura: `docs/adr/`
-- Convenções de código (back e front): `.kiro/steering/`
+- **Decisões de arquitetura (ADRs):** `docs/adr/` — versionado no repositório.
+- **Convenções (steering) e as specs de cada etapa:** documentos de trabalho que guiaram o
+  desenvolvimento, mantidos localmente (não versionados).
