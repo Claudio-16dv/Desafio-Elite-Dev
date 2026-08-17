@@ -7,6 +7,10 @@ modo de teste) e recebe um **ingresso com QR Code** que pode compartilhar por li
 organizador que o cadastrou.
 
 > **Demo online (é onde o pagamento funciona):** https://desafio-elite-dev-tau.vercel.app
+>
+> **Observação:** o back-end está no plano gratuito do Render e **hiberna** após um tempo
+> ocioso. Por isso a **primeira requisição pode levar ~30–50s** (cold start) — depois que ele
+> "acorda", a navegação fica normal.
 
 O domínio central é: `User` (3 papéis) · `Event` + `Seat` · `Reservation` (+ `ReservationSeat`)
 · `Order` · `Ticket`. Preço sempre em **centavos**; estados sempre em **enum**.
@@ -293,6 +297,21 @@ ver o QR e o compartilhamento imediatamente, sem comprar.
   (padrão 5); passando isso, ele é liberado para outra pessoa.
 - **Evento esgotado / cancelado**: eventos sem disponibilidade ou cancelados não deixam
   iniciar uma nova compra.
+
+---
+
+## Como a IA foi usada neste projeto
+
+As **decisões de arquitetura e de produto foram minhas**: como o projeto seria organizado, o
+back-end em camadas (controller → use-case → entidade → repositório/porta), o padrão "página
+burra, regra no server" no front, as convenções de código, o recorte de escopo e os tradeoffs
+de cada escolha. Essas decisões ficaram registradas nas convenções do projeto
+(`.kiro/steering/`) e nos ADRs (`docs/adr/`).
+
+Usei a IA (Kiro) principalmente como **ferramenta de codificação**: implementar o que eu já
+tinha decidido, escrever código e testes seguindo os padrões que defini, acelerar as partes
+repetitivas e servir de par na hora de revisar. A direção técnica, as decisões de design e a
+conferência do que entrou no projeto foram minhas — a IA executou dentro desse desenho.
 
 ---
 
