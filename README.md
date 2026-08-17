@@ -64,7 +64,6 @@ Desafio-Elite-Dev/
 │   └── frontend/     # App Next.js
 ├── packages/
 │   └── shared/       # @app/shared — enums + contratos (o contrato back ↔ front)
-├── docs/adr/         # decisões de arquitetura registradas
 ├── docker-compose.yml
 ├── Dockerfile.test   # imagem só para rodar os testes no Docker
 └── .env.example      # um único .env na raiz cobre back + front
@@ -306,8 +305,8 @@ ver o QR e o compartilhamento imediatamente, sem comprar.
 As **decisões de arquitetura e de produto foram minhas**: como o projeto seria organizado, o
 back-end em camadas (controller → use-case → entidade → repositório/porta), o padrão de
 páginas finas no front com a regra de negócio no servidor, as convenções de código, o recorte
-de escopo e os tradeoffs de cada escolha. As decisões de arquitetura estão registradas nos
-ADRs (`docs/adr/`).
+de escopo e os tradeoffs de cada escolha. O racional dessas escolhas está resumido na seção
+_Por que essa arquitetura_, mais acima.
 
 O trabalho foi conduzido por **specs**: para cada definição — uma funcionalidade nova ou a
 correção/ajuste de algo combinado ao longo do projeto — eu escrevia uma spec detalhada (o que
@@ -329,6 +328,6 @@ na aplicação pode demorar ~30–50s** (cold start); depois disso, a navegaçã
 
 ## Documentação interna
 
-- **Decisões de arquitetura (ADRs):** `docs/adr/` — versionado no repositório.
+- **Racional de arquitetura:** resumido na seção _Por que essa arquitetura_, na Parte 1.
 - **Convenções (steering) e as specs de cada etapa:** documentos de trabalho que guiaram o
   desenvolvimento, mantidos localmente (não versionados).
