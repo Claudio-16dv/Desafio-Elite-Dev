@@ -143,9 +143,9 @@ packages/shared/src/
   chamar a regra, salvar).
 - **Concorrência sem drama**: "não vender o mesmo assento 2x" é garantido por **constraint
   única no banco + `$transaction`** no adaptador do repositório — simples e correto sob corrida.
-- **Front "página burra, regra no server"**: Server Components para leitura e Server Actions
-  para mutação; todo acesso à API fica **isolado na camada de feature** (página e componente
-  nunca chamam a API direto). Sem regra de negócio duplicada no cliente.
+- **Front com páginas finas (regra no servidor)**: Server Components para leitura e Server
+  Actions para mutação; todo acesso à API fica **isolado na camada de feature** (página e
+  componente nunca chamam a API direto). Sem regra de negócio duplicada no cliente.
 - **Postgres + Prisma**: a **mesma schema** roda local (Docker) e em produção (Supabase) —
   só muda a `DATABASE_URL`. Migrations versionadas.
 - **Pagamento com Stripe em modo de teste (sandbox)**: o gateway fica **atrás de uma porta**;
@@ -303,9 +303,9 @@ ver o QR e o compartilhamento imediatamente, sem comprar.
 ## Como a IA foi usada neste projeto
 
 As **decisões de arquitetura e de produto foram minhas**: como o projeto seria organizado, o
-back-end em camadas (controller → use-case → entidade → repositório/porta), o padrão "página
-burra, regra no server" no front, as convenções de código, o recorte de escopo e os tradeoffs
-de cada escolha. Essas decisões ficaram registradas nas convenções do projeto
+back-end em camadas (controller → use-case → entidade → repositório/porta), o padrão de
+páginas finas no front com a regra de negócio no servidor, as convenções de código, o recorte
+de escopo e os tradeoffs de cada escolha. Essas decisões ficaram registradas nas convenções do projeto
 (`.kiro/steering/`) e nos ADRs (`docs/adr/`).
 
 Usei a IA (Kiro) principalmente como **ferramenta de codificação**: implementar o que eu já
